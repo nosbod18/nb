@@ -3,41 +3,21 @@
 #include "../tiny_app.h"
 #include "../tiny_gfx.h"
 
-static float const vertices[] = {
-         0.0f,  0.5f,  1.0f, 0.0f, 0.0f, 1.0f,
-         0.5f, -0.5f,  0.0f, 1.0f, 0.0f, 1.0f,
-        -0.5f, -0.5f,  0.0f, 0.0f, 1.0f, 1.0f,
-};
+tgfx_Buffer   *cmd = NULL;
+tgfx_Buffer   *vbo = NULL;
+tgfx_Program  *prg = NULL;
+tgfx_Pipeline *pip = NULL;
 
-static char const *vss =
-        "#version 330 core\n"
-        "layout(location = 0) in vec2 aPosition;\n"
-        "layout(location = 1) in vec4 aColor;\n"
-        "out vec4 vColor;\n"
-        "void main(void) {\n"
-        "       gl_Position = vec4(aPosition, 0.0, 1.0);\n"
-        "       vColor = aColor;\n"
-        "}\n";
-
-static char const *fss =
-        "#version 330 core\n"
-        "in vec4 vColor;\n"
-        "out vec4 fColor;\n"
-        "void main(void) {\n"
-        "       fColor = vColor;\n"
-        "}\n";
-
-static tgfx_Buffer      *cmd;
-static tgfx_Buffer      *vbo;
-static tgfx_Program     *prg;
-static tgfx_Pipeline    *pip;
-static tgfx_Context     *ctx;
-
-
-static void Init(void) {
+void Init(void) {
         cmd = tgfx_CreateBuffer(&(tgfx_BufferDesc){
                 .type = tgfx_BufferType_Command
         });
+
+        float const vertices[] = {
+                 0.0f,  0.5f,  1.0f, 0.0f, 0.0f, 1.0f,
+                 0.5f, -0.5f,  0.0f, 1.0f, 0.0f, 1.0f,
+                -0.5f, -0.5f,  0.0f, 0.0f, 1.0f, 1.0f,
+        };
 
         vbo = tgfx_CreateBuffer(&(tgfx_BufferDesc){
                 .data = vertices,
@@ -45,8 +25,22 @@ static void Init(void) {
         });
 
         prg = tgfx_CreateProgram(&(tgfx_ProgramDesc){
-                .vs.source = vss,
-                .fs.source = fss,
+                .vs.source =
+                        "#version 330 core\n"
+                        "layout(location = 0) in vec2 aPosition;\n"
+                        "layout(location = 1) in vec4 aColor;\n"
+                        "out vec4 vColor;\n"
+                        "void main(void) {\n"
+                        "       gl_Position = vec4(aPosition, 0.0, 1.0);\n"
+                        "       vColor = aColor;\n"
+                        "}\n",
+                .fs.source =
+                        "#version 330 core\n"
+                        "in vec4 vColor;\n"
+                        "out vec4 fColor;\n"
+                        "void main(void) {\n"
+                        "       fColor = vColor;\n"
+                        "}\n",
         });
 
         pip = tgfx_CreatePipeline(&(tgfx_PipelineDesc){
@@ -58,14 +52,18 @@ static void Init(void) {
         });
 }
 
-static bool Update(float dt) {
+bool Update(float dt) {
         if (tapp_IsKeyDown(tapp_Key_Escape)) {
                 return false;
         }
 
+        tgfx_Bindings bind = {
+                .vertexBuffers[0] = vbo,
+        };
+
         tgfx_BeginPass(cmd, &(tgfx_PassDesc){0});
                 tgfx_UsePipeline(cmd, pip);
-                tgfx_UseBindings(cmd, (tgfx_Bindings){ .vertexBuffers[0] = vbo });
+                tgfx_UseBindings(cmd, bind);
                 tgfx_Draw(cmd, 3, 0);
         tgfx_EndPass(cmd);
 
@@ -73,17 +71,16 @@ static bool Update(float dt) {
         return true;
 }
 
-static void Quit(void) {
+void Quit(void) {
         tgfx_DeleteBuffer(cmd);
         tgfx_DeleteBuffer(vbo);
         tgfx_DeleteProgram(prg);
         tgfx_DeletePipeline(pip);
 }
 
-
 tapp_AppDesc tapp_Main(int argc, char **argv) {
         return (tapp_AppDesc){
-                .title  = "Hello Triangle",
+                .title  = "tapp | Hello Triangle",
                 .width  = 640,
                 .height = 480,
                 .init   = Init,

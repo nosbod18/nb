@@ -38,7 +38,6 @@ typedef enum tgfx_PassAction {
 } tgfx_PassAction;
 
 
-typedef struct tgfx_Context     tgfx_Context;
 typedef struct tgfx_Buffer      tgfx_Buffer;
 typedef struct tgfx_Image       tgfx_Image;
 typedef struct tgfx_Program     tgfx_Program;
@@ -48,11 +47,6 @@ typedef struct tgfx_Bindings {
         tgfx_Buffer *vertexBuffers[16];
         tgfx_Buffer *indexBuffer;
 } tgfx_Bindings;
-
-typedef struct tgfx_ContextDesc {
-        int major;
-        int minor;
-} tgfx_ContextDesc;
 
 typedef struct tgfx_BufferDesc {
         void const *data;
@@ -105,9 +99,6 @@ typedef struct tgfx_PassDesc {
 } tgfx_PassDesc;
 
 
-tgfx_Context   *tgfx_CreateContext      (tgfx_ContextDesc const *desc);
-void            tgfx_DeleteContext      (tgfx_Context *context);
-
 tgfx_Buffer    *tgfx_CreateBuffer       (tgfx_BufferDesc const *desc);
 void            tgfx_DeleteBuffer       (tgfx_Buffer *buffer);
 bool            tgfx_UpdateBuffer       (tgfx_Buffer *buffer, void const *data, int size);
@@ -152,14 +143,29 @@ void            tgfx_SubmitCommands     (tgfx_Buffer *cmd);
 #include <stdlib.h> // malloc, free
 #include <assert.h>
 
+#ifndef uchar
+        #define uchar   unsigned char
+        #define ushort  unsigned short
+        #define uint    unsigned int
+        #define ulong   unsigned long
+#endif
+
 
 struct tgfx_Buffer {
-        unsigned int id;
+        void *data;
+        uint id;
         int capacity;
         int size;
         int type;
-        int pos;
+        int offset;
 };
+
+typedef struct tgfx_Uniform {
+        int  loc;
+        int  type;
+        int  count;
+        bool transposed;
+} tgfx_Uniform;
 
 
 static int tgfx__GetBufferTypeAsGL(tgfx_BufferType type) {
@@ -191,7 +197,7 @@ static int tgfx__GetUniformTypeAsGL(tgfx_UniformType type) {
         return 0;
 }
 
-static int tgfx_GetVertexTypeAsGL(tgfx_VertexType type) {
+static int tgfx__GetVertexTypeAsGL(tgfx_VertexType type) {
         switch (type) {
                 case tgfx_VertexType_Int8:      return GL_BYTE;
                 case tgfx_VertexType_Uint8:     return GL_UNSIGNED_BYTE;
@@ -206,15 +212,6 @@ static int tgfx_GetVertexTypeAsGL(tgfx_VertexType type) {
 }
 
 
-tgfx_Context *tgfx_CreateContext(tgfx_ContextDesc const *desc) {
-        tgfx_Context *ctx = malloc(sizeof *ctx);
-        return ctx;
-}
-
-void tgfx_DeleteContext(tgfx_Context *ctx) {
-        free(ctx);
-}
-
 tgfx_Buffer *tgfx_CreateBuffer(tgfx_BufferDesc const *desc) {
         assert(desc);
 
@@ -223,21 +220,20 @@ tgfx_Buffer *tgfx_CreateBuffer(tgfx_BufferDesc const *desc) {
                 return NULL;
         }
 
+        buffer->data   = desc->data;
         buffer->size   = desc->size;
         buffer->type   = tgfx__GetBufferTypeAsGL(desc->type);
         buffer->useage = tgfx__GetBufferUsageAsGL(desc->useage);
 
         GL(glGenBuffers(1, &buffer->id));
         GL(glBindBuffer(buffer->type, buffer->id));
-        GL(glBufferData(buffer->type, buffer->size, desc->data, buffer->usage));
+        GL(glBufferData(buffer->type, buffer->size, buffer->data, buffer->usage));
         GL(glBindBuffer(buffer->type, 0));
-
         return buffer;
 }
 
 void tgfx_DeleteBuffer(tgfx_Buffer *buffer) {
         assert(buffer);
-
         GL(glDeleteBuffers(1, &buffer->id));
         free(buffer);
 }
@@ -266,14 +262,14 @@ bool tgfx_AppendBuffer(tgfx_Buffer *buffer, void const *data, int size) {
         }
 
         GL(glBindBuffer(buffer->type, buffer->id));
-        GL(glBufferSubData(buffer->type, buffer->pos, size, data));
+        GL(glBufferSubData(buffer->type, buffer->offset, size, data));
         GL(glBindBuffer(buffer->type, 0));
-        buffer->pos += size;
+        buffer->offset += size;
         return true;
 }
 
-unsigned int tgfx_CreateShader(char const *src, int type) {
-        GL(unsigned int id = glCreateShader(type));
+uint tgfx_CreateShader(char const *src, int type) {
+        GL(uint id = glCreateShader(type));
         GL(glShaderSource(id, 1, (GLchar const **)&src, NULL));
         GL(glCompileShader(id));
 
@@ -294,8 +290,8 @@ unsigned int tgfx_CreateShader(char const *src, int type) {
 tgfx_Program *tgfx_CreateProgram(tgfx_ProgramDesc const *desc) {
         assert(desc);
 
-        unsigned int vs = tgfx_CreateShader(desc->vs.source, GL_VERTEX_SHADER);
-        unsigned int fs = tgfx_CreateShader(desc->fs.source, GL_FRAGMENT_SHADER);
+        uint vs = tgfx_CreateShader(desc->vs.source, GL_VERTEX_SHADER);
+        uint fs = tgfx_CreateShader(desc->fs.source, GL_FRAGMENT_SHADER);
 
         if (!vs || !fs) {
                 return NULL;
@@ -308,10 +304,8 @@ tgfx_Program *tgfx_CreateProgram(tgfx_ProgramDesc const *desc) {
 
         GL(glAttachShader(program->id, vs));
         GL(glAttachShader(program->id, fs));
-
         GL(glLinkProgram(program->id));
         GL(glValidateProgram(program->id));
-
         GL(glDetachShader(program->id, vs));
         GL(glDetachShader(program->id, fs));
 
@@ -370,15 +364,6 @@ tgfx_Pipeline *tgfx_CreatePipeline(tgfx_PipelineDesc const *desc) {
 
 void tgfx_DeletePipeline(tgfx_Pipeline *pipeline) {
         free(pipeline);
-}
-
-void tgfx_BeginPass(tgfx_Buffer *command, tgfx_PassDesc const *desc) {
-}
-
-void tgfx_EndPass(tgfx_Buffer *command) {
-}
-
-void tgfx_UseBindings(tgfx_Buffer *command, tgfx_Bindings *bindings) {
 }
 
 

@@ -5,7 +5,7 @@
 #include "../tiny_gfx.h"
 #include "../tiny_math.h"
 
-static float const vertices[] = {
+float const vertices[] = {
         -1.0f, -1.0f, -1.0f,   1.0f, 0.0f, 0.0f, 1.0f, // North
          1.0f, -1.0f, -1.0f,   1.0f, 0.0f, 0.0f, 1.0f,
          1.0f,  1.0f, -1.0f,   1.0f, 0.0f, 0.0f, 1.0f,
@@ -32,7 +32,7 @@ static float const vertices[] = {
          1.0f,  1.0f, -1.0f,   1.0f, 0.0f, 0.5f, 1.0f
 };
 
-static unsigned short const indices[] = {
+unsigned short const indices[] = {
          0,  1,  2,   0,  2,  3, // North
          6,  5,  4,   7,  6,  4, // South
          8,  9, 10,   8, 10, 11, // East
@@ -41,7 +41,7 @@ static unsigned short const indices[] = {
         22, 21, 20,  23, 22, 20  // Top
 };
 
-static char const *vss =
+char const *vss =
         "#version 330 core\n"
         "layout(location = 0) in vec2 aPosition;\n"
         "layout(location = 1) in vec4 aColor;\n"
@@ -51,7 +51,7 @@ static char const *vss =
         "       vColor = aColor;\n"
         "}\n";
 
-static char const *fss =
+char const *fss =
         "#version 330 core\n"
         "in vec4 vColor;\n"
         "out vec4 fColor;\n"
@@ -59,21 +59,30 @@ static char const *fss =
         "       fColor = vColor;\n"
         "}\n";
 
-static tgfx_Buffer      *cmd;
-static tgfx_Buffer      *vbo;
-static tgfx_Program     *prg;
-static tgfx_Pipeline    *pip;
-static tgfx_Context     *ctx;
+
+tgfx_Buffer     *cmd = NULL;
+tgfx_Buffer     *vbo = NULL;
+tgfx_Buffer     *ibo = NULL;
+tgfx_Program    *prg = NULL;
+tgfx_Pipeline   *pip = NULL;
+
+tm_Vector2 rotation  = {0};
 
 
-static void Init(void) {
+void Init(void) {
         cmd = tgfx_CreateBuffer(&(tgfx_BufferDesc){
                 .type = tgfx_BufferType_Command
         });
 
         vbo = tgfx_CreateBuffer(&(tgfx_BufferDesc){
                 .data = vertices,
-                .size = sizeof vertices,
+                .size = sizeof vertices
+        });
+
+        ibo = tgfx_CreateBuffer(&(tgfx_BufferDesc){
+                .data = indices,
+                .size = sizeof indices,
+                .type = tgfx_BufferType_Index
         });
 
         prg = tgfx_CreateProgram(&(tgfx_ProgramDesc){
@@ -90,20 +99,35 @@ static void Init(void) {
         });
 }
 
-static bool Update(float dt) {
+bool Update(float dt) {
         if (tapp_IsKeyDown(tapp_Key_Escape)) {
                 return false;
         }
 
-    hmm_mat4 proj = HMM_Perspective(60.0f, (float)WIDTH/(float)HEIGHT, 0.01f, 10.0f);
-    hmm_mat4 view = HMM_LookAt(HMM_Vec3(0.0f, 1.5f, 6.0f), HMM_Vec3(0.0f, 0.0f, 0.0f), HMM_Vec3(0.0f, 1.0f, 0.0f));
-    hmm_mat4 view_proj = HMM_MultiplyMat4(proj, view);
-        tm_Matrix4 mvp = tm_IdentityMatrix4();
+        float w = tapp_GetWidth();
+        float h = tapp_GetHeight();
+
+        tm_Matrix proj     = tm_Perspective(60.0f, w / h, 0.01f, 10.0f);
+        tm_Matrix view     = tm_LookAt((tm_Vector3){0.0f, 1.5f, 6.0f}, (tm_Vector3){0}, (tm_Vector3){0.0f, 1.0f, 0.0f});
+        tm_Matrix viewProj = tm_MatrixMul(proj, view);
+
+        rotation.x += 1.0f * t;
+        rotation.y += 2.0f * t;
+
+        tm_Matrix rxm   = tm_Rotate((tm_Vector3){1.0f, 0.0f, 0.0f}, rotation.x);
+        tm_Matrix rym   = tm_Rotate((tm_Vector3){0.0f, 1.0f, 0.0f}, rotation.y);
+        tm_Matrix model = tm_MatrixMul(rxm, rym);
+        tm_Matrix mvp   = tm_MatrixMul(viewProj, model);
+
+        tgfx_Bindings bind = {
+                .vertexBuffers[0] = vbo,
+                .indexBuffer = ibo
+        };
 
         tgfx_BeginPass(cmd, &(tgfx_PassDesc){0});
                 tgfx_UpdateProgram(prg, 0, &mvp);
                 tgfx_UsePipeline(cmd, pip);
-                tgfx_UseBindings(cmd, (tgfx_Bindings){ .vertexBuffers[0] = vbo });
+                tgfx_UseBindings(cmd, bind);
                 tgfx_Draw(cmd, 3, 0);
         tgfx_EndPass(cmd);
 
@@ -111,9 +135,10 @@ static bool Update(float dt) {
         return true;
 }
 
-static void Quit(void) {
+void Quit(void) {
         tgfx_DeleteBuffer(cmd);
         tgfx_DeleteBuffer(vbo);
+        tgfx_DeleteBuffer(ibo);
         tgfx_DeleteProgram(prg);
         tgfx_DeletePipeline(pip);
 }
@@ -121,11 +146,11 @@ static void Quit(void) {
 
 tapp_AppDesc tapp_Main(int argc, char **argv) {
         return (tapp_AppDesc){
-                .title  = "Hello Triangle",
-                .width  = 640,
-                .height = 480,
-                .init   = Init,
-                .update = Update,
-                .quit   = Quit
+                .title    = "Hello Triangle",
+                .width    = 640,
+                .height   = 480,
+                .onInit   = Init,
+                .onUpdate = Update,
+                .onQuit   = Quit
         };
 }
