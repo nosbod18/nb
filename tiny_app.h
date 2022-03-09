@@ -226,25 +226,31 @@ float           tapp_GetAspectRatio     (void);
         #include <X11/Xutil.h>
         #include <X11/XKBlib.h>
         #include <X11/Xresource.h>
+        #define GLX_GLXEXT_PROTOTYPES
+        #include <GL/glx.h>
 #endif // __linux__
 
 static struct {
 #if defined(__linux__)
         struct {
                 struct {
-                        Atom    wmDeleteWindow;
-                        Atom    netWmPing;
+                        Atom wmDeleteWindow;
+                        Atom netSupported;
+                        Atom netWmPing;
+                        Atom netWmName;
+                        Atom utf8String;
                 } atoms;
 
-                Display        *display;
-                Visual         *visual;
-                Colormap        colormap;
-                Window          window;
-                XIM             im;
-                XIC             ic;
-                int             screen;
-                int             depth;
-        } x11;
+                Display  *display;
+                Visual   *visual;
+                Window    root;
+                Window    window;
+                Colormap  colormap;
+                XIM       im;
+                XIC       ic;
+                int       screen;
+                int       depth;
+        };
 
         struct {
                 GLXFBConfig     fbconfig;
@@ -280,120 +286,158 @@ bool tapp__Init(tapp_AppDesc const *desc) {
 
 #if defined(__linux__)
 
-static void tapp_deleteWindowX11(void) {
-        if (TAPP.x11.window) {
-                XUnmapWindow(TAPP.x11.display, TAPP.x11.window);
-                XDestroyWindow(TAPP.x11.display, TAPP.x11.window);
-                TAPP.x11.window = 0;
-        }
-
-        if (TAPP.x11.colormap) {
-                XFreeColormap(TAPP.x11.display, TAPP.x11.colormap);
-                TAPP.x11.colormap = 0;
-        }
-        XFlush(TAPP.x11.display);
+static void tapp__QuitX11(void) {
 }
 
-static bool tapp_initWindowX11(tapp_AppDesc const *desc, Visual *vi, int depth) {
-        const uint32_t swamask = CWBorderPixel | CWColormap | CWEventMask;
-        XSetWindowAttributes swa = {
-                .colormap = TAPP.x11.colormap;
-                .border_pixel = 0;
-                .event_mask = StructureNotifyMask
-                                | KeyPressMask
-                                | KeyReleaseMask
-                                | PointerMotionMask
-                                | ButtonPressMask
-                                | ButtonReleaseMask
-                                | ExposureMask
-                                | FocusChangeMask
-                                | VisibilityChangeMask
-                                | EnterWindowMask
-                                | LeaveWindowMask
-                                | PropertyChangeMask;
+static void tapp__InitX11(tapp_AppDesc const *desc) {
+        XInitThreads();
+
+        TAPP.x11.display = XOpenDisplay(NULL)
+        if (!TAPP.x11.display) {
+                tapp__Error("XOpenDisplay() failed");
+                return false;
+        }
+
+        TAPP.x11.screen = DefaultScreen(TAPP.x11.display);
+        TAPP.x11.root = RootWindow(TAPP.x11.display, TAPP.x11.screen);
+
+        int unused[5];
+        if (!XkbQueryExtension(TAPP.x11.display, &unused[0], &unused[1], &unused[2], &unused[3], &unused[4])) {
+                tapp__Error("Xkb extension missing");
+                tapp__QuitX11();
+                return false;
+        }
+
+        TAPP.x11.im = XOpenIM(TAPP.x11.display, NULL, NULL, NULL);
+        if (!TAPP.x11.im) {
+                tapp__Error("XOpenIM() failed");
+                tapp__QuitX11();
+                return false;
+        }
+
+        char *atoms[] = {
+                "WM_DELETE_WINDOW",
+                "_NET_SUPPORTED",
+                "_NET_WM_PING",
+                "_NET_WM_NAME",
+                "UTF8_STRING"
         };
 
-        int dpyWidth    = DisplayWidth(TAPP.x11.display, TAPP.x11.screen);
-        int dpyHeight   = DisplayHeight(TAPP.x11.display, TAPP.x11.screen);
-        int width       = TAPP.width  ? TAPP.width  : tapp_Defaults_WindowWidth;
-        int height      = TAPP.height ? TAPP.height : tapp_Defaults_WindowHeight;
-        int xpos        = (dpyWidth  - width)  / 2;
-        int ypos        = (dpyHeight - height) / 2;
+        if (!XInternAtoms(glwt.x11.display, atoms, 5, False, (Atom *)&TAPP.x11.atoms)) {
+                tapp__Error("XInternAtoms() failed");
+                tapp__QuitX11();
+                return false;
+        }
 
-        TAPP_x11_grab_error_handler();
-        TAPP.x11.window = XCreateWindow(TAPP.x11.display, TAPP.x11.root, xpos, ypos, width, height, 0, depth, InputOutput, visual, swamask, &swa);
-        TAPP_x11_release_error_handler();
+        if (!init_x11_atoms()) {
+                tapp__QuitX11();
+                return false;
+        }
+
+        XVisualInfo tmp = {
+                .visualId = TAPP.glx.visualId,
+        };
+
+        int numVis;
+        XVisualInfo *vi = XGetVisualInfo(TAPP.x11.display, VisualIDMask, &tmp, &numVis);
+        if (!vi || numVis < 1) {
+                XFree(vi);
+                tapp__Error("XGetVisualInfo() failed");
+                tapp__QuitX11();
+                return false;
+        }
+
+        TAPP.x11.visual = vi->visual;
+        TAPP.x11.depth = vi->depth;
+        XFree(vi);
+
+        TAPP.x11.colormap = XCreateColormap(TAPP.x11.display, TAPP.x11.root, TAPP.x11.visual, AllocNone);
+        if (!TAPP.x11.colormap) {
+                tapp__Error("XCreateColormap() failed");
+                tapp__QuitX11();
+                return false;
+        }
+
+        return true;
+}
+
+static void tapp__DeleteWindowX11(void) {
+        if (TAPP.x11.display) {
+                if (TAPP.x11.colormap) {
+                        XFreeColormap(TAPP.x11.display, TAPP.x11.colormap);
+                }
+                if (TAPP.x11.im) {
+                        XCloseIM(TAPP.x11.xim);
+                }
+                XCloseDisplay(TAPP.x11.display);
+        }
+}
+
+static bool tapp__InitWindowX11(tapp_AppDesc const *desc, Visual *vi, int depth) {
+        XSetWindowAttributes swa = {
+                .colormap = TAPP.x11.colormap,
+                .eventMask = StructureNotifyMask
+                               | PointerMotionMask
+                               | ButtonPressMask
+                               | ButtonReleaseMask
+                               | KeyPressMask
+                               | KeyReleaseMask
+                               | EnterWindowMask
+                               | LeaveWindowMask
+                               | FocusChangeMask
+                               | ExposureMask,
+        };
+
+        int width             = desc->window.width  ? desc->window.width  : 640;
+        int height            = desc->window.height ? desc->window.height : 640;
+        unsigned long swaMask = CWColormap | CWEventMask;
+
+        TAPP.x11.window = XCreateWindow(TAPP.x11.display, TAPP.x11.root, 0, 0, width, height, 0, TAPP.x11.depth, InputOutput, TAPP.x11.visual, swaMask, &swa);
 
         if (!TAPP.x11.window) {
-                tapp_fail("X11: Failed to create window");
+               tapp__Error("XCreateWindow failed");
+               tapp__FreeWindowX11();
+               return false;
         }
 
         Atom protocols[] = {
-            TAPP.x11.atoms.wmDeleteWindow,
+            TAPP.x11.wmDeleteWindow,
+            TAPP.x11.netWmPing,
         };
-        XSetWMProtocols(TAPP.x11.display, TAPP.x11.window, protocols, 1);
 
-        XSizeHints* hints = XAllocSizeHints();
-        hints->flags = (PWinGravity | PPosition | PSize);
-        hints->win_gravity = StaticGravity;
-        hints->x = xpos;
-        hints->y = ypos;
-        hints->width = width;
-        hints->height = height;
-        XSetWMNormalHints(TAPP.x11.display, TAPP.x11.window, hints);
-        XFree(hints);
+        if (XSetWMProtocols(TAPP.x11.display, TAPP.x11.window, protocols, sizeof protocols / sizeof *protocols) == 0) {
+               tapp__Error("XSetWMProtocols failed");
+               tapp__FreeWindowX11();
+               return false;
+        }
 
-        Xutf8SetWMProperties(TAPP.x11.display, TAPP.x11.window, TAPP.title, TAPP.title, NULL, 0, NULL, NULL, NULL);
-        XChangeProperty(TAPP.x11.display, TAPP.x11.window, TAPP.x11.netWmName, TAPP.x11.utf8String, 8, PropModeReplace, (unsigned char *)TAPP.title, strlen(TAPP.title));
-        XChangeProperty(TAPP.x11.display, TAPP.x11.window, TAPP.x11.netWmIconName, TAPP.x11.utf8String, 8, PropModeReplace, (unsigned char *)TAPP.title, strlen(TAPP.title));
+        TAPP.x11.ic = XCreateIC(TAPP.x11.xim, XNInputStyle, XIMPreeditNothing | XIMStatusNothing, XNClientWindow, TAPP.x11.window, XNFocusWindow, TAPP.x11.window, NULL);
+        if (!TAPP.x11.ic) {
+               tapp__Error("XCreateIC failed");
+               tapp__FreeWindowX11();
+               return false;
+        }
+
+        XChangeProperty(TAPP.x11.display, TAPP.x11.window, TAPP.x11.netWmName, TAPP.x11.utf8String, 8, PropModeReplace, (unsigned char *)desc->window.title, strlen(desc->window.title));
+        XMapRaised(TAPP.x11.display, TAPP.x11.window);
         XFlush(TAPP.x11.display);
-
-        XWindowAttributes attribs;
-        XGetWindowAttributes(TAPP.x11.display, TAPP.x11.window, &attribs);
-        TAPP.width  = attribs.width;
-        TAPP.height = attribs.height;
         return true;
 }
 
-void tapp_deleteContextGLX(void) {
+static void tapp__DeleteContextGLX(void) {
         // Nothing
 }
 
-bool tapp_createContextGLX(tapp_AppDesc const *desc) {
-        GLXFBConfig native = TAPP_glx_choosefbconfig();
-        if (!native) {
-                tapp_fail("GLX: Failed to find a suitable GLXFBConfig (2)");
-        }
-        if (!(TAPP.glx.ARB_create_context && TAPP.glx.ARB_create_context_profile)) {
-            tapp_fail("GLX: ARB_create_context and ARB_create_context_profile required");
-        }
-        TAPP_x11_grab_error_handler();
-        const int attribs[] = {
-            GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
-            GLX_CONTEXT_MINOR_VERSION_ARB, 3,
-            GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
-            GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
-            0, 0
-        };
-        TAPP.glx.ctx = TAPP.glx.CreateContextAttribsARB(TAPP.x11.display, native, NULL, True, attribs);
-        if (!TAPP.glx.ctx) {
-            tapp_fail("GLX: failed to create GL context");
-        }
-        TAPP_x11_release_error_handler();
-        TAPP.glx.window = TAPP.glx.CreateWindow(TAPP.x11.display, native, TAPP.x11.window, NULL);
-        if (!TAPP.glx.window) {
-            tapp_fail("GLX: failed to create window");
-        }
-        return true;
+static bool tapp__CreateContextGLX(tapp_AppDesc const *desc) {
 }
 
 int main(int argc, char **argv) {
         tapp_AppDesc desc = tapp_Main(argc, argv);
 
-        if (!tapp_init(&desc)
-                || !tapp_createX11(&desc)
-                || !tapp_createWindowX11(&desc)
-                || !tapp_createContextGLX(&desc)
+        if (!tapp__Init(&desc)
+                || !tapp__InitX11(&desc)
+                || !tapp__CreateWindowX11(&desc)
+                || !tapp__CreateContextGLX(&desc)
         {
                 return 1;
         }
@@ -405,7 +449,7 @@ int main(int argc, char **argv) {
                 while (pending--) {
                         XEvent event;
                         XNextEvent(TAPP.x11.display, &event);
-                        if (!TAPP.OnEvent(tapp_createEventX11(&event))) {
+                        if (!TAPP.OnEvent(tapp__CreateEventX11(&event))) {
                                 TAPP.quitRequested = true;
                         }
                 }
@@ -416,9 +460,9 @@ int main(int argc, char **argv) {
 
         TAPP.onQuit();
 
-        tapp_deleteWindowX11();
-        tapp_uitX11();
-        tapp_quit();
+        tapp__DeleteWindowX11();
+        tapp__QuitX11();
+        tapp__Quit();
         return 0;
 }
 
