@@ -1,17 +1,21 @@
-/// # tiny_math.h - Vector, matrix, and affine transformation math
+/// # tiny_math.h
+///
+/// ## About
+/// Vector, matrix, and affine transformation math
 ///
 /// ## Usage
-/// Do this in *one* C/C++ file
+/// Do this in **one** C/C++ file
 /// ```c
 /// #define tm_IMPLEMENTATION
 /// #include "tiny_math.h"
 /// ````
 ///
 /// ## History
-/// - v0.4 - Added affine logic
-/// - v0.3 - Added matrix logic
-/// - v0.2 - Added Vector{2, 3, 4} logic
-/// - v0.1 - Added types and interface functions
+/// - v0.4.1 - Missing semicolons and parenthesis
+/// - v0.4.0 - Added affine logic
+/// - v0.3.0 - Added matrix logic
+/// - v0.2.0 - Added Vector{2, 3, 4} logic
+/// - v0.1.0 - Added types and interface functions
 
 #ifndef __tiny_math_h__
 #define __tiny_math_h__
@@ -60,7 +64,7 @@ tm_Vector##n    tm_Vector##n##DivScalar         (tm_Vector##n a, float b);\
 tm_Vector##n    tm_Vector##n##Min               (tm_Vector##n a, tm_Vector##n b);\
 tm_Vector##n    tm_Vector##n##Max               (tm_Vector##n a, tm_Vector##n b);\
 tm_Vector##n    tm_Vector##n##Normalize         (tm_Vector##n a);\
-float           tm_Vector##n##Dot               (tm_Vector##n a);\
+float           tm_Vector##n##Dot               (tm_Vector##n a, tm_Vector##n b);\
 float           tm_Vector##n##Length            (tm_Vector##n a);\
 float           tm_Vector##n##LengthSquared     (tm_Vector##n a);\
 float           tm_Vector##n##MinComponent      (tm_Vector##n a);\
@@ -145,7 +149,7 @@ tm_Vector2 tm_Vector2DivScalar(tm_Vector2 a, float b) {
         return (tm_Vector2){ a.x / b, a.y / b };
 }
 
-tm_Vector2 tm_Vector2Min(tm_Vector2 a, tm_Vector2 b {
+tm_Vector2 tm_Vector2Min(tm_Vector2 a, tm_Vector2 b) {
         return (tm_Vector2){ tm_Min(a.x, b.x), tm_Min(a.y, b.y) };
 }
 
@@ -157,7 +161,7 @@ tm_Vector2 tm_Vector2Normalize(tm_Vector2 a) {
         return tm_Vector2DivScalar(a, tm_Vector2Length(a));
 }
 
-float tm_Vector2Dot(tm_Vector2 a) {
+float tm_Vector2Dot(tm_Vector2 a, tm_Vector2 b) {
         return a.x * b.x + a.y * b.y;
 }
 
@@ -195,19 +199,19 @@ tm_Vector3 tm_Vector3Div(tm_Vector3 a, tm_Vector3 b) {
         return (tm_Vector3){ a.x / b.x, a.y / b.y, a.z / b.z };
 }
 
-tm_Vector3 tm_Vector3Add(tm_Vector3 a, float b) {
+tm_Vector3 tm_Vector3AddScalar(tm_Vector3 a, float b) {
         return (tm_Vector3){ a.x + b, a.y + b, a.z + b };
 }
 
-tm_Vector3 tm_Vector3Sub(tm_Vector3 a, float b) {
+tm_Vector3 tm_Vector3SubScalar(tm_Vector3 a, float b) {
         return (tm_Vector3){ a.x - b, a.y - b, a.z - b };
 }
 
-tm_Vector3 tm_Vector3Mul(tm_Vector3 a, float b) {
+tm_Vector3 tm_Vector3MulScalar(tm_Vector3 a, float b) {
         return (tm_Vector3){ a.x * b, a.y * b, a.z * b };
 }
 
-tm_Vector3 tm_Vector3Div(tm_Vector3 a, float b) {
+tm_Vector3 tm_Vector3DivScalar(tm_Vector3 a, float b) {
         return (tm_Vector3){ a.x / b, a.y / b, a.z / b };
 }
 
@@ -329,7 +333,7 @@ tm_Matrix tm_MatrixAdd(tm_Matrix a, tm_Matrix b) {
                 a.m10 + b.m10, a.m11 + b.m11, a.m12 + b.m12, a.m13 + b.m13,
                 a.m20 + b.m20, a.m21 + b.m21, a.m22 + b.m22, a.m23 + b.m23,
                 a.m30 + b.m30, a.m31 + b.m31, a.m32 + b.m32, a.m33 + b.m33,
-        }
+        };
 }
 
 tm_Matrix tm_MatrixSub(tm_Matrix a, tm_Matrix b) {
@@ -338,7 +342,7 @@ tm_Matrix tm_MatrixSub(tm_Matrix a, tm_Matrix b) {
                 a.m10 - b.m10, a.m11 - b.m11, a.m12 - b.m12, a.m13 - b.m13,
                 a.m20 - b.m20, a.m21 - b.m21, a.m22 - b.m22, a.m23 - b.m23,
                 a.m30 - b.m30, a.m31 - b.m31, a.m32 - b.m32, a.m33 - b.m33,
-        }
+        };
 }
 
 tm_Matrix tm_MatrixMul(tm_Matrix a, tm_Matrix b) {
@@ -347,7 +351,7 @@ tm_Matrix tm_MatrixMul(tm_Matrix a, tm_Matrix b) {
                 a.m10 * b.m10, a.m11 * b.m11, a.m12 * b.m12, a.m13 * b.m13,
                 a.m20 * b.m20, a.m21 * b.m21, a.m22 * b.m22, a.m23 * b.m23,
                 a.m30 * b.m30, a.m31 * b.m31, a.m32 * b.m32, a.m33 * b.m33,
-        }
+        };
 }
 
 tm_Matrix tm_MatrixDiv(tm_Matrix a, tm_Matrix b) {
@@ -356,7 +360,7 @@ tm_Matrix tm_MatrixDiv(tm_Matrix a, tm_Matrix b) {
                 a.m10 / b.m10, a.m11 / b.m11, a.m12 / b.m12, a.m13 / b.m13,
                 a.m20 / b.m20, a.m21 / b.m21, a.m22 / b.m22, a.m23 / b.m23,
                 a.m30 / b.m30, a.m31 / b.m31, a.m32 / b.m32, a.m33 / b.m33,
-        }
+        };
 }
 
 tm_Matrix tm_MatrixAddScalar(tm_Matrix a, float b) {
@@ -365,7 +369,7 @@ tm_Matrix tm_MatrixAddScalar(tm_Matrix a, float b) {
                 a.m10 + b, a.m11 + b, a.m12 + b, a.m13 + b,
                 a.m20 + b, a.m21 + b, a.m22 + b, a.m23 + b,
                 a.m30 + b, a.m31 + b, a.m32 + b, a.m33 + b,
-        }
+        };
 }
 
 tm_Matrix tm_MatrixSubScalar(tm_Matrix a, float b) {
@@ -374,16 +378,16 @@ tm_Matrix tm_MatrixSubScalar(tm_Matrix a, float b) {
                 a.m10 - b, a.m11 - b, a.m12 - b, a.m13 - b,
                 a.m20 - b, a.m21 - b, a.m22 - b, a.m23 - b,
                 a.m30 - b, a.m31 - b, a.m32 - b, a.m33 - b,
-        }
+        };
 }
 
-tm_Matrix tm_MatrixMul(tm_Matrix a, tm_Matrix b) {
+tm_Matrix tm_MatrixMulScalar(tm_Matrix a, float b) {
         return (tm_Matrix){
                 a.m00 * b, a.m01 * b, a.m02 * b, a.m03 * b,
                 a.m10 * b, a.m11 * b, a.m12 * b, a.m13 * b,
                 a.m20 * b, a.m21 * b, a.m22 * b, a.m23 * b,
                 a.m30 * b, a.m31 * b, a.m32 * b, a.m33 * b,
-        }
+        };
 }
 
 tm_Matrix tm_MatrixDivScalar(tm_Matrix a, float b) {
@@ -392,7 +396,7 @@ tm_Matrix tm_MatrixDivScalar(tm_Matrix a, float b) {
                 a.m10 / b, a.m11 / b, a.m12 / b, a.m13 / b,
                 a.m20 / b, a.m21 / b, a.m22 / b, a.m23 / b,
                 a.m30 / b, a.m31 / b, a.m32 / b, a.m33 / b,
-        }
+        };
 }
 
 // ======== Affine =============================================
@@ -406,13 +410,13 @@ tm_Matrix tm_Translate(tm_Vector3 translation) {
                 .m31 = translation.y,
                 .m32 = translation.z,
                 .m33 = 1.0f,
-        }
+        };
 }
 
 // http://fastgraph.com/makegames/3drotation/
 tm_Matrix tm_Rotate(tm_Vector3 axis, float degrees) {
-        float c = cosf(angle);
-        float s = sinf(angle);
+        float c = cosf(tm_DegToRad(degrees));
+        float s = sinf(tm_DegToRad(degrees));
         float t = 1.0f - c;
 
         tm_Vector3 an = tm_Vector3Normalize(axis);
@@ -433,13 +437,13 @@ tm_Matrix tm_Scale(tm_Vector3 scale) {
                 .m11 = scale.y,
                 .m22 = scale.z,
                 .m33 = 1.0f
-        }
+        };
 }
 
 tm_Matrix tm_LookAt(tm_Vector3 eye, tm_Vector3 target, tm_Vector3 up) {
         tm_Vector3 f = tm_Vector3Normalize(tm_Vector3Sub(target, eye));
-        tm_Vector3 r = tm_Vector3Normalize(tm_CrossVector3(f, up));
-        tm_Vector3 u = tm_CrossVector3(r, f);
+        tm_Vector3 r = tm_Vector3Normalize(tm_Vector3Cross(f, up));
+        tm_Vector3 u = tm_Vector3Cross(r, f);
 
         float rdot = -tm_Vector3Dot(r, eye);
         float udot = -tm_Vector3Dot(u, eye);
@@ -450,7 +454,7 @@ tm_Matrix tm_LookAt(tm_Vector3 eye, tm_Vector3 target, tm_Vector3 up) {
                  r.y,  u.y, -f.y, 0.0f,
                  r.z,  u.z, -f.z, 0.0f,
                 rdot, udot, fdot, 1.0f
-        }
+        };
 }
 
 tm_Matrix tm_Perspective(float fovDegrees, float aspect, float near, float far) {
@@ -459,7 +463,7 @@ tm_Matrix tm_Perspective(float fovDegrees, float aspect, float near, float far) 
 
         return (tm_Matrix){
                 .m00 = fov / aspect,
-                .m11 = fovRad,
+                .m11 = fov,
                 .m22 = (near + far) * nf,
                 .m23 = -1.0f,
                 .m32 = 2.0f * near * far * nf
@@ -477,7 +481,7 @@ tm_Matrix tm_Orthographic(float left, float right, float bottom, float top, floa
                 .m22 = 2.0f * fn,
                 .m30 = -(right + left) * rl,
                 .m31 = -(top + bottom) * tb,
-                .m32 = -(far + near) * nf,
+                .m32 = -(far + near) * fn,
                 .m33 = 1.0f
         };
 }

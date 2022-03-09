@@ -1,9 +1,7 @@
 #ifndef __tiny_app_h__
 #define __tiny_app_h__
 
-#include <stdint.h>
 #include <stdbool.h>
-
 
 typedef enum tapp_Key {
         tapp_Key_Invalid                = 0x00,
@@ -25,7 +23,7 @@ typedef enum tapp_Key {
         tapp_Key_Comma                  = ',',
         tapp_Key_Minus                  = '-',
         tapp_Key_Period                 = '.',
-        tapp_Key_ForwardSlash           = '/',
+        tapp_Key_ForswardSlash           = '/',
         tapp_Key_0                      = '0',
         tapp_Key_1                      = '1',
         tapp_Key_2                      = '2',
@@ -91,7 +89,7 @@ typedef enum tapp_Key {
         tapp_Key_Keypad_8               = 0x88,
         tapp_Key_Keypad_9               = 0x89,
         tapp_Key_Keypad_Separator       = 0x8a,
-        tapp_Key_Keypad_ForwardSlash    = 0x8b,
+        tapp_Key_Keypad_ForswardSlash    = 0x8b,
         tapp_Key_Keypad_Asterisk        = 0x8c,
         tapp_Key_Keypad_Plus            = 0x8d,
         tapp_Key_Keypad_Minus           = 0x8e,
@@ -130,46 +128,80 @@ typedef enum tapp_Key {
         tapp_Key_NumLock                = 0xba,
         tapp_Key_CapsLock               = 0xbb,
         tapp_Key_ScrollLock             = 0xbc,
-        tapp_Key_Last                   = 0x100
+        tapp_Key_COUNT                  = 0x100
 } tapp_Key;
+
+typedef enum tapp_Mouse {
+        tapp_Mouse_Left                 = 0,
+        tapp_Mouse_Middle               = 1,
+        tapp_Mouse_Right                = 2,
+        tapp_Mouse_COUNT,
+} tapp_Mouse;
+
+typedef enum tapp_Mod {
+        tapp_Mod_Shift                  = 1 << 0,
+        tapp_Mod_Control                = 1 << 1,
+        tapp_Mod_Alt                    = 1 << 2,
+        tapp_Mod_Super                  = 1 << 3,
+        tapp_Mod_AltGR                  = 1 << 4,
+        tapp_Mod_NumLock                = 1 << 5,
+        tapp_Mod_CapsLock               = 1 << 6,
+        tapp_Mod_COUNT,
+} tapp_Mod;
+
+typedef enum tapp_EventType {
+        tapp_EventType_None = 0,
+        tapp_EventType_Quit,
+        tapp_EventType_WindowShown,
+        tapp_EventType_WindowHidden,
+        tapp_EventType_WindowResized,
+        tapp_EventType_WindowFocused,
+        tapp_EventType_WindowUnfocused,
+        tapp_EventType_KeyPress,
+        tapp_EventType_KeyRelease,
+        tapp_EventType_MousePress,
+        tapp_EventType_MouseRelease,
+        tapp_EventType_MouseEnter,
+        tapp_EventType_MouseLeave,
+        tapp_EventType_MouseMotion,
+        tapp_EventType_MouseScroll,
+        tapp_EventType_COUNT
+} tapp_EventType;
 
 typedef struct tapp_Event {
         tapp_EventType type;
         union {
-
+                struct { int dummy;             } none;
+                struct { int width, height;     } resize;
+                struct { int sym, mods;         } key;
+                struct { int x, y, button, mods;} mouse;
+                struct { int x, y, buttons;     } motion;
+                struct { double x, y;           } scroll;
         };
 } tapp_Event;
 
 typedef struct tapp_AppDesc {
-        char const *title;
-        int width;
-        int height;
+        struct {
+                struct { int major, minor; } version;
+        } context;
+
+        struct {
+                char const *title;
+                int  width;
+                int  height;
+                bool fullscreen;
+                bool vsync;
+        } window;
+
         void (*onInit)(void);
-        bool (*onUpdate)(float dt);
-        void (*onEvent)(void *userData, tapp_Event event);
+        bool (*onEvent)(tapp_Event event);
+        void (*onUpdate)(float dt);
         void (*onQuit)(void);
 } tapp_AppDesc;
 
 
 tapp_AppDesc    tapp_Main               (int argc, char **argv);
-
-// ---- Input ------------------
-
-bool            tapp_IsKeyDown          (int key);
-bool            tapp_IsKeyPressed       (int key);
-bool            tapp_IsKeyReleased      (int key);
-bool            tapp_IsMouseDown        (int button);
-bool            tapp_IsMousePressed     (int button);
-bool            tapp_IsMouseReleased    (int button);
-
-void            tapp_GetMousePosition   (float *x, float *y);
-void            tapp_GetMouseScroll     (float *x, float *y);
-void            tapp_GetMouseDelta      (float *x, float *y);
-
-bool            tapp_IsMouseTrapped     (void);
-bool            tapp_IsMouseHidden      (void);
-void            tapp_SetMouseTrapped    (bool trapped);
-void            tapp_SetMouseHidden     (bool hidden);
+float           tapp_GetAspectRatio     (void);
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -189,111 +221,205 @@ void            tapp_SetMouseHidden     (bool hidden);
 
 #include <assert.h>
 
-typedef struct tapp_Input {
+#if defined(__linux__)
+        #include <X11/Xlib.h>
+        #include <X11/Xutil.h>
+        #include <X11/XKBlib.h>
+        #include <X11/Xresource.h>
+#endif // __linux__
+
+static struct {
+#if defined(__linux__)
         struct {
-                uint64_t keys[4]; // tapp_Key_Last / 64
-        } keyboard[2];
+                struct {
+                        Atom    wmDeleteWindow;
+                        Atom    netWmPing;
+                } atoms;
+
+                Display        *display;
+                Visual         *visual;
+                Colormap        colormap;
+                Window          window;
+                XIM             im;
+                XIC             ic;
+                int             screen;
+                int             depth;
+        } x11;
 
         struct {
-                uint8_t buttons;
-                float xposition, yposition;
-                float xscroll, yscroll;
-                bool isTrapped;
-                bool isHidden;
-        } mouse[2];
-} tapp_Input;
+                GLXFBConfig     fbconfig;
+                GLXWindow       surface;
+                GLXContext      context;
+                int             visualId;
+        } glx;
+#endif // __linux__
 
 
-static void    *tapp_CreateWindow       (char const *title, int width, int height);
-static void     tapp_DeleteWindow       (void *window);
-static void     tapp_ProcessEvents      (void *window);
-static void     tapp_Present            (void const *window);
+        struct {
+                struct { int major, minor; } version;
+        } gl;
 
+        bool quitRequested;
+} TAPP = {0};
+
+
+//==============================================================
+// General
+
+bool tapp__Init(tapp_AppDesc const *desc) {
+        TAPP.onInit     = desc->onInit;
+        TAPP.onEvent    = desc->onEvent;
+        TAPP.onUpdate   = desc->onUpdate;
+        TAPP.onQuit     = desc->onQuit;
+
+        return true;
+}
 
 //==============================================================
 // Linux
 
 #if defined(__linux__)
 
+static void tapp_deleteWindowX11(void) {
+        if (TAPP.x11.window) {
+                XUnmapWindow(TAPP.x11.display, TAPP.x11.window);
+                XDestroyWindow(TAPP.x11.display, TAPP.x11.window);
+                TAPP.x11.window = 0;
+        }
+
+        if (TAPP.x11.colormap) {
+                XFreeColormap(TAPP.x11.display, TAPP.x11.colormap);
+                TAPP.x11.colormap = 0;
+        }
+        XFlush(TAPP.x11.display);
+}
+
+static bool tapp_initWindowX11(tapp_AppDesc const *desc, Visual *vi, int depth) {
+        const uint32_t swamask = CWBorderPixel | CWColormap | CWEventMask;
+        XSetWindowAttributes swa = {
+                .colormap = TAPP.x11.colormap;
+                .border_pixel = 0;
+                .event_mask = StructureNotifyMask
+                                | KeyPressMask
+                                | KeyReleaseMask
+                                | PointerMotionMask
+                                | ButtonPressMask
+                                | ButtonReleaseMask
+                                | ExposureMask
+                                | FocusChangeMask
+                                | VisibilityChangeMask
+                                | EnterWindowMask
+                                | LeaveWindowMask
+                                | PropertyChangeMask;
+        };
+
+        int dpyWidth    = DisplayWidth(TAPP.x11.display, TAPP.x11.screen);
+        int dpyHeight   = DisplayHeight(TAPP.x11.display, TAPP.x11.screen);
+        int width       = TAPP.width  ? TAPP.width  : tapp_Defaults_WindowWidth;
+        int height      = TAPP.height ? TAPP.height : tapp_Defaults_WindowHeight;
+        int xpos        = (dpyWidth  - width)  / 2;
+        int ypos        = (dpyHeight - height) / 2;
+
+        TAPP_x11_grab_error_handler();
+        TAPP.x11.window = XCreateWindow(TAPP.x11.display, TAPP.x11.root, xpos, ypos, width, height, 0, depth, InputOutput, visual, swamask, &swa);
+        TAPP_x11_release_error_handler();
+
+        if (!TAPP.x11.window) {
+                tapp_fail("X11: Failed to create window");
+        }
+
+        Atom protocols[] = {
+            TAPP.x11.atoms.wmDeleteWindow,
+        };
+        XSetWMProtocols(TAPP.x11.display, TAPP.x11.window, protocols, 1);
+
+        XSizeHints* hints = XAllocSizeHints();
+        hints->flags = (PWinGravity | PPosition | PSize);
+        hints->win_gravity = StaticGravity;
+        hints->x = xpos;
+        hints->y = ypos;
+        hints->width = width;
+        hints->height = height;
+        XSetWMNormalHints(TAPP.x11.display, TAPP.x11.window, hints);
+        XFree(hints);
+
+        Xutf8SetWMProperties(TAPP.x11.display, TAPP.x11.window, TAPP.title, TAPP.title, NULL, 0, NULL, NULL, NULL);
+        XChangeProperty(TAPP.x11.display, TAPP.x11.window, TAPP.x11.netWmName, TAPP.x11.utf8String, 8, PropModeReplace, (unsigned char *)TAPP.title, strlen(TAPP.title));
+        XChangeProperty(TAPP.x11.display, TAPP.x11.window, TAPP.x11.netWmIconName, TAPP.x11.utf8String, 8, PropModeReplace, (unsigned char *)TAPP.title, strlen(TAPP.title));
+        XFlush(TAPP.x11.display);
+
+        XWindowAttributes attribs;
+        XGetWindowAttributes(TAPP.x11.display, TAPP.x11.window, &attribs);
+        TAPP.width  = attribs.width;
+        TAPP.height = attribs.height;
+        return true;
+}
+
+void tapp_deleteContextGLX(void) {
+        // Nothing
+}
+
+bool tapp_createContextGLX(tapp_AppDesc const *desc) {
+        GLXFBConfig native = TAPP_glx_choosefbconfig();
+        if (!native) {
+                tapp_fail("GLX: Failed to find a suitable GLXFBConfig (2)");
+        }
+        if (!(TAPP.glx.ARB_create_context && TAPP.glx.ARB_create_context_profile)) {
+            tapp_fail("GLX: ARB_create_context and ARB_create_context_profile required");
+        }
+        TAPP_x11_grab_error_handler();
+        const int attribs[] = {
+            GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
+            GLX_CONTEXT_MINOR_VERSION_ARB, 3,
+            GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
+            GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
+            0, 0
+        };
+        TAPP.glx.ctx = TAPP.glx.CreateContextAttribsARB(TAPP.x11.display, native, NULL, True, attribs);
+        if (!TAPP.glx.ctx) {
+            tapp_fail("GLX: failed to create GL context");
+        }
+        TAPP_x11_release_error_handler();
+        TAPP.glx.window = TAPP.glx.CreateWindow(TAPP.x11.display, native, TAPP.x11.window, NULL);
+        if (!TAPP.glx.window) {
+            tapp_fail("GLX: failed to create window");
+        }
+        return true;
+}
+
 int main(int argc, char **argv) {
         tapp_AppDesc desc = tapp_Main(argc, argv);
 
-        XInitThreads();
-
-        Display *display = XOpenDisplay(NULL);
-        assert(display && "XOpenDisplay() failed");
-
-        int screen = DefaultScreen(display);
-        Window root = DefaultRootWindow(display);
-        tapp__InitGLX();
-
-        Visual *visual = NULL;
-        int depth = 0;
-        tapp__ChooseGLXVisual(&visual, &depth);
-        tapp__CreateX11Window(desc->title, desc->width, desc->height, visual, depth);
-        tapp__CreateGLXContext();
-        tapp__ShowX11Window();
-
-        if (desc->fullscreen) {
-                tapp__SetX11WindowFullscreen(true);
+        if (!tapp_init(&desc)
+                || !tapp_createX11(&desc)
+                || !tapp_createWindowX11(&desc)
+                || !tapp_createContextGLX(&desc)
+        {
+                return 1;
         }
 
-        tapp__SetGLXSwapInterval(desc->swapInterval);
-        XFlush(display);
+        TAPP.onInit();
 
-        while (tapp__ProcessX11Events(window)) {
-                if (!desc.update(dt)) {
-                        break;
+        while (!TAPP.quitRequested) {
+                int pending = XPending(TAPP.x11.display);
+                while (pending--) {
+                        XEvent event;
+                        XNextEvent(TAPP.x11.display, &event);
+                        if (!TAPP.OnEvent(tapp_createEventX11(&event))) {
+                                TAPP.quitRequested = true;
+                        }
                 }
 
-                tapp_Present(window);
+                TAPP.onUpdate(dt);
+                tapp_swapBuffersGLX();
         }
 
-        tapp_DeleteWindow(window);
+        TAPP.onQuit();
+
+        tapp_deleteWindowX11();
+        tapp_uitX11();
+        tapp_quit();
         return 0;
-}
-
-
-void *tapp_CreateWindow(char const *title, int width, int height) {
-        Display *display  = XOpenDisplay(NULL);
-        int screen        = DefaultScreen(display);
-        Visual* visual    = DefaultVisual(display, screen);
-        int depth         = DefaultDepth(display, screen);
-        Colormap colormap = XCreateColormap(display, RootWindow(display, screen), visual, AllocNone);
-
-        XSetWindowAttributes swa = {
-                .colormap = colormap,
-                .background_pixel = BlackPixel(display, screen),
-                .border_pixel = 0,
-                .event_mask = KeyPressMask | KeyReleaseMask | StructureNotifyMask | ExposureMask,
-        };
-
-        window = XCreateWindow(
-                display,
-                RootWindow(display, screen),
-                0,
-                0,
-                desc.width,
-                desc.height,
-                0,
-                depth,
-                InputOutput,
-                visual,
-                CWBackPixel | CWBorderPixel | CWEventMask | CWColormap,
-                &swa);
-
-        XSelectInput(display, window, ExposureMask | KeyPressMask);
-        XMapWindow(display, window);
-        XFlush(display);
-
-}
-
-void tapp_DeleteWindow(void *window) {
-        XUnmapWindow(display, window);
-        XDestroyWindow(display, window);
-        XFreeColormap(display, colormap);
-        XFlush(display);
-        XCloseDisplay(display);
 }
 
 #endif // __linux__

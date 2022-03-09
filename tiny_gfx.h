@@ -86,7 +86,7 @@ typedef struct tgfx_PipelineDesc {
 typedef struct tgfx_PassDesc {
         struct {
                 tgfx_PassAction action;
-                float value[4];
+                struct { float r, g, b, a; } value;
         } colors[4];
         struct {
                 tgfx_PassAction action;

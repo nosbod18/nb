@@ -52,11 +52,15 @@ void Init(void) {
         });
 }
 
-bool Update(float dt) {
-        if (tapp_IsKeyDown(tapp_Key_Escape)) {
+bool Event(tapp_Event event) {
+        if (event.type == tapp_EventType_KeyRelease && event.key.sym == tapp_Key_Escape) {
                 return false;
         }
 
+        return true;
+}
+
+void Update(float dt) {
         tgfx_Bindings bind = {
                 .vertexBuffers[0] = vbo,
         };
@@ -68,7 +72,6 @@ bool Update(float dt) {
         tgfx_EndPass(cmd);
 
         tgfx_SubmitCommands(cmd);
-        return true;
 }
 
 void Quit(void) {
@@ -80,11 +83,9 @@ void Quit(void) {
 
 tapp_AppDesc tapp_Main(int argc, char **argv) {
         return (tapp_AppDesc){
-                .title  = "tapp | Hello Triangle",
-                .width  = 640,
-                .height = 480,
-                .init   = Init,
-                .update = Update,
-                .quit   = Quit
+                .window.title   = "tapp | Hello Triangle",
+                .onInit         = Init,
+                .onUpdate       = Update,
+                .onQuit         = Quit
         };
 }

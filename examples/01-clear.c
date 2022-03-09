@@ -16,25 +16,33 @@ void Init(void) {
         };
 }
 
-bool Update(float dt) {
-        if (tapp_IsKeyDown(tapp_Key_Escape)) {
+bool Event(tapp_Event event){
+        if (event.type == tapp_EventType_KeyRelease && event.key.sym == tapp_Key_Escape) {
                 return false;
         }
 
-        float g = pass.colors[0].value[2] + 0.01f;
-        pass.colors[0].value[2] = g > 1.0f ? 0.0f : g;
+        return true;
+}
+
+void Update(float dt) {
+        float g = pass.colors[0].value.g + 0.01f;
+        pass.colors[0].value.g = g > 1.0f ? 0.0f : g;
+
         tgfx_BeginPass(cmd, &pass);
         tgfx_EndPass(cmd);
         tgfx_SubmitCommands(cmd);
-        return true;
+}
+
+void Quit(void) {
+        tgfx_DeleteBuffer(cmd);
 }
 
 tapp_AppDesc tapp_Main(int argc, char **argv) {
         return (tapp_AppDesc){
-                .title = "tapp | Clear",
-                .width = 640,
-                .height = 480,
-                .init = Init,
-                .update = Update
+                .window.title = "tapp | Clear",
+                .onInit       = Init,
+                .onEvent      = Event,
+                .onUpdate     = Update,
+                .onQuit       = Quit
         };
 }

@@ -5,79 +5,58 @@
 #include "../tiny_gfx.h"
 #include "../tiny_math.h"
 
-float const vertices[] = {
-        -1.0f, -1.0f, -1.0f,   1.0f, 0.0f, 0.0f, 1.0f, // North
-         1.0f, -1.0f, -1.0f,   1.0f, 0.0f, 0.0f, 1.0f,
-         1.0f,  1.0f, -1.0f,   1.0f, 0.0f, 0.0f, 1.0f,
-        -1.0f,  1.0f, -1.0f,   1.0f, 0.0f, 0.0f, 1.0f,
-        -1.0f, -1.0f,  1.0f,   0.0f, 1.0f, 0.0f, 1.0f, // South
-         1.0f, -1.0f,  1.0f,   0.0f, 1.0f, 0.0f, 1.0f,
-         1.0f,  1.0f,  1.0f,   0.0f, 1.0f, 0.0f, 1.0f,
-        -1.0f,  1.0f,  1.0f,   0.0f, 1.0f, 0.0f, 1.0f,
-        -1.0f, -1.0f, -1.0f,   0.0f, 0.0f, 1.0f, 1.0f, // East
-        -1.0f,  1.0f, -1.0f,   0.0f, 0.0f, 1.0f, 1.0f,
-        -1.0f,  1.0f,  1.0f,   0.0f, 0.0f, 1.0f, 1.0f,
-        -1.0f, -1.0f,  1.0f,   0.0f, 0.0f, 1.0f, 1.0f,
-         1.0f, -1.0f, -1.0f,   1.0f, 0.5f, 0.0f, 1.0f, // West
-         1.0f,  1.0f, -1.0f,   1.0f, 0.5f, 0.0f, 1.0f,
-         1.0f,  1.0f,  1.0f,   1.0f, 0.5f, 0.0f, 1.0f,
-         1.0f, -1.0f,  1.0f,   1.0f, 0.5f, 0.0f, 1.0f,
-        -1.0f, -1.0f, -1.0f,   0.0f, 0.5f, 1.0f, 1.0f, // Bottom
-        -1.0f, -1.0f,  1.0f,   0.0f, 0.5f, 1.0f, 1.0f,
-         1.0f, -1.0f,  1.0f,   0.0f, 0.5f, 1.0f, 1.0f,
-         1.0f, -1.0f, -1.0f,   0.0f, 0.5f, 1.0f, 1.0f,
-        -1.0f,  1.0f, -1.0f,   1.0f, 0.0f, 0.5f, 1.0f, // Top
-        -1.0f,  1.0f,  1.0f,   1.0f, 0.0f, 0.5f, 1.0f,
-         1.0f,  1.0f,  1.0f,   1.0f, 0.0f, 0.5f, 1.0f,
-         1.0f,  1.0f, -1.0f,   1.0f, 0.0f, 0.5f, 1.0f
-};
-
-unsigned short const indices[] = {
-         0,  1,  2,   0,  2,  3, // North
-         6,  5,  4,   7,  6,  4, // South
-         8,  9, 10,   8, 10, 11, // East
-        14, 13, 12,  15, 14, 12, // West
-        16, 17, 18,  16, 18, 19, // Bottom
-        22, 21, 20,  23, 22, 20  // Top
-};
-
-char const *vss =
-        "#version 330 core\n"
-        "layout(location = 0) in vec2 aPosition;\n"
-        "layout(location = 1) in vec4 aColor;\n"
-        "out vec4 vColor;\n"
-        "void main(void) {\n"
-        "       gl_Position = vec4(aPosition, 0.0, 1.0);\n"
-        "       vColor = aColor;\n"
-        "}\n";
-
-char const *fss =
-        "#version 330 core\n"
-        "in vec4 vColor;\n"
-        "out vec4 fColor;\n"
-        "void main(void) {\n"
-        "       fColor = vColor;\n"
-        "}\n";
-
-
-tgfx_Buffer     *cmd = NULL;
-tgfx_Buffer     *vbo = NULL;
-tgfx_Buffer     *ibo = NULL;
-tgfx_Program    *prg = NULL;
-tgfx_Pipeline   *pip = NULL;
-
-tm_Vector2 rotation  = {0};
-
+tgfx_Buffer    *cmd = NULL;
+tgfx_Buffer    *vbo = NULL;
+tgfx_Buffer    *ibo = NULL;
+tgfx_Program   *prg = NULL;
+tgfx_Pipeline  *pip = NULL;
+tm_Vector2      rot  = {0};
 
 void Init(void) {
         cmd = tgfx_CreateBuffer(&(tgfx_BufferDesc){
                 .type = tgfx_BufferType_Command
         });
 
+        float const vertices[] = {
+                -1.0f, -1.0f, -1.0f,   1.0f, 0.0f, 0.0f, 1.0f, // North
+                 1.0f, -1.0f, -1.0f,   1.0f, 0.0f, 0.0f, 1.0f,
+                 1.0f,  1.0f, -1.0f,   1.0f, 0.0f, 0.0f, 1.0f,
+                -1.0f,  1.0f, -1.0f,   1.0f, 0.0f, 0.0f, 1.0f,
+                -1.0f, -1.0f,  1.0f,   0.0f, 1.0f, 0.0f, 1.0f, // South
+                 1.0f, -1.0f,  1.0f,   0.0f, 1.0f, 0.0f, 1.0f,
+                 1.0f,  1.0f,  1.0f,   0.0f, 1.0f, 0.0f, 1.0f,
+                -1.0f,  1.0f,  1.0f,   0.0f, 1.0f, 0.0f, 1.0f,
+                -1.0f, -1.0f, -1.0f,   0.0f, 0.0f, 1.0f, 1.0f, // East
+                -1.0f,  1.0f, -1.0f,   0.0f, 0.0f, 1.0f, 1.0f,
+                -1.0f,  1.0f,  1.0f,   0.0f, 0.0f, 1.0f, 1.0f,
+                -1.0f, -1.0f,  1.0f,   0.0f, 0.0f, 1.0f, 1.0f,
+                 1.0f, -1.0f, -1.0f,   1.0f, 0.5f, 0.0f, 1.0f, // West
+                 1.0f,  1.0f, -1.0f,   1.0f, 0.5f, 0.0f, 1.0f,
+                 1.0f,  1.0f,  1.0f,   1.0f, 0.5f, 0.0f, 1.0f,
+                 1.0f, -1.0f,  1.0f,   1.0f, 0.5f, 0.0f, 1.0f,
+                -1.0f, -1.0f, -1.0f,   0.0f, 0.5f, 1.0f, 1.0f, // Bottom
+                -1.0f, -1.0f,  1.0f,   0.0f, 0.5f, 1.0f, 1.0f,
+                 1.0f, -1.0f,  1.0f,   0.0f, 0.5f, 1.0f, 1.0f,
+                 1.0f, -1.0f, -1.0f,   0.0f, 0.5f, 1.0f, 1.0f,
+                -1.0f,  1.0f, -1.0f,   1.0f, 0.0f, 0.5f, 1.0f, // Top
+                -1.0f,  1.0f,  1.0f,   1.0f, 0.0f, 0.5f, 1.0f,
+                 1.0f,  1.0f,  1.0f,   1.0f, 0.0f, 0.5f, 1.0f,
+                 1.0f,  1.0f, -1.0f,   1.0f, 0.0f, 0.5f, 1.0f
+        };
+
         vbo = tgfx_CreateBuffer(&(tgfx_BufferDesc){
                 .data = vertices,
                 .size = sizeof vertices
         });
+
+        unsigned short const indices[] = {
+                 0,  1,  2,   0,  2,  3, // North
+                 6,  5,  4,   7,  6,  4, // South
+                 8,  9, 10,   8, 10, 11, // East
+                14, 13, 12,  15, 14, 12, // West
+                16, 17, 18,  16, 18, 19, // Bottom
+                22, 21, 20,  23, 22, 20  // Top
+        };
 
         ibo = tgfx_CreateBuffer(&(tgfx_BufferDesc){
                 .data = indices,
@@ -86,8 +65,22 @@ void Init(void) {
         });
 
         prg = tgfx_CreateProgram(&(tgfx_ProgramDesc){
-                .vs.source = vss,
-                .fs.source = fss,
+                .vs.source =
+                        "#version 330 core\n"
+                        "layout(location = 0) in vec2 aPosition;\n"
+                        "layout(location = 1) in vec4 aColor;\n"
+                        "out vec4 vColor;\n"
+                        "void main(void) {\n"
+                        "       gl_Position = vec4(aPosition, 0.0, 1.0);\n"
+                        "       vColor = aColor;\n"
+                        "}\n",
+                .fs.source =
+                        "#version 330 core\n"
+                        "in vec4 vColor;\n"
+                        "out vec4 fColor;\n"
+                        "void main(void) {\n"
+                        "       fColor = vColor;\n"
+                        "}\n",
         });
 
         pip = tgfx_CreatePipeline(&(tgfx_PipelineDesc){
@@ -99,23 +92,24 @@ void Init(void) {
         });
 }
 
-bool Update(float dt) {
-        if (tapp_IsKeyDown(tapp_Key_Escape)) {
+bool Event(tapp_Event event) {
+        if (event.type == tapp_EventType_KeyRelease && event.key.sym == tapp_Key_Escape) {
                 return false;
         }
 
-        float w = tapp_GetWidth();
-        float h = tapp_GetHeight();
+        return true;
+}
 
-        tm_Matrix proj     = tm_Perspective(60.0f, w / h, 0.01f, 10.0f);
+void Update(float dt) {
+        tm_Matrix proj     = tm_Perspective(60.0f, tapp_GetAspectRatio(), 0.01f, 10.0f);
         tm_Matrix view     = tm_LookAt((tm_Vector3){0.0f, 1.5f, 6.0f}, (tm_Vector3){0}, (tm_Vector3){0.0f, 1.0f, 0.0f});
         tm_Matrix viewProj = tm_MatrixMul(proj, view);
 
-        rotation.x += 1.0f * t;
-        rotation.y += 2.0f * t;
+        rot.x += 1.0f * dt;
+        rot.y += 2.0f * dt;
 
-        tm_Matrix rxm   = tm_Rotate((tm_Vector3){1.0f, 0.0f, 0.0f}, rotation.x);
-        tm_Matrix rym   = tm_Rotate((tm_Vector3){0.0f, 1.0f, 0.0f}, rotation.y);
+        tm_Matrix rxm   = tm_Rotate((tm_Vector3){1.0f, 0.0f, 0.0f}, rot.x);
+        tm_Matrix rym   = tm_Rotate((tm_Vector3){0.0f, 1.0f, 0.0f}, rot.y);
         tm_Matrix model = tm_MatrixMul(rxm, rym);
         tm_Matrix mvp   = tm_MatrixMul(viewProj, model);
 
@@ -132,7 +126,6 @@ bool Update(float dt) {
         tgfx_EndPass(cmd);
 
         tgfx_SubmitCommands(cmd);
-        return true;
 }
 
 void Quit(void) {
@@ -146,11 +139,10 @@ void Quit(void) {
 
 tapp_AppDesc tapp_Main(int argc, char **argv) {
         return (tapp_AppDesc){
-                .title    = "Hello Triangle",
-                .width    = 640,
-                .height   = 480,
-                .onInit   = Init,
-                .onUpdate = Update,
-                .onQuit   = Quit
+                .window.title   = "Hello Triangle",
+                .onInit         = Init,
+                .onEvent        = Event,
+                .onUpdate       = Update,
+                .onQuit         = Quit
         };
 }
