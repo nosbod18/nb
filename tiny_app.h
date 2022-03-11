@@ -131,21 +131,20 @@ typedef enum tapp_Key {
         tapp_Key_COUNT                  = 0x100
 } tapp_Key;
 
-typedef enum tapp_Mouse {
-        tapp_Mouse_Left                 = 0,
-        tapp_Mouse_Middle               = 1,
-        tapp_Mouse_Right                = 2,
-        tapp_Mouse_COUNT,
-} tapp_Mouse;
+typedef enum tapp_MouseButton {
+        tapp_MouseButton_Left           = 0,
+        tapp_MouseButton_Middle         = 1,
+        tapp_MouseButton_Right          = 2,
+        tapp_MouseButton_COUNT,
+} tapp_MouseButton;
 
 typedef enum tapp_Mod {
         tapp_Mod_Shift                  = 1 << 0,
         tapp_Mod_Control                = 1 << 1,
         tapp_Mod_Alt                    = 1 << 2,
         tapp_Mod_Super                  = 1 << 3,
-        tapp_Mod_AltGR                  = 1 << 4,
-        tapp_Mod_NumLock                = 1 << 5,
-        tapp_Mod_CapsLock               = 1 << 6,
+        tapp_Mod_NumLock                = 1 << 4,
+        tapp_Mod_CapsLock               = 1 << 5,
         tapp_Mod_COUNT,
 } tapp_Mod;
 
@@ -171,7 +170,7 @@ typedef enum tapp_EventType {
 typedef struct tapp_Event {
         tapp_EventType type;
         union {
-                struct { int dummy;             } none;
+                struct { int dummy;             } nop;
                 struct { int width, height;     } resize;
                 struct { int sym, mods;         } key;
                 struct { int x, y, button, mods;} mouse;
@@ -180,11 +179,12 @@ typedef struct tapp_Event {
         };
 } tapp_Event;
 
-typedef struct tapp_AppDesc {
-        struct {
-                struct { int major, minor; } version;
-        } context;
+typedef void (*tapp_OnInit)(void);
+typedef bool (*tapp_OnEvent)(tapp_Event event);
+typedef void (*tapp_OnUpdate)(float dt);
+typedef void (*tapp_OnQuit)(void);
 
+typedef struct tapp_AppDesc {
         struct {
                 char const *title;
                 int  width;
@@ -193,15 +193,19 @@ typedef struct tapp_AppDesc {
                 bool vsync;
         } window;
 
-        void (*onInit)(void);
-        bool (*onEvent)(tapp_Event event);
-        void (*onUpdate)(float dt);
-        void (*onQuit)(void);
+        struct {
+                struct { int major, minor; } version;
+        } context;
+
+        tapp_OnInit     onInit;
+        tapp_OnEvent    onEvent;
+        tapp_OnUpdate   onUpdate;
+        tapp_OnQuit     onQuit;
 } tapp_AppDesc;
 
 
-tapp_AppDesc    tapp_Main               (int argc, char **argv);
-float           tapp_GetAspectRatio     (void);
+extern tapp_AppDesc     tapp_Main               (int argc, char **argv);
+float                   tapp_GetAspectRatio     (void);
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -234,23 +238,23 @@ static struct {
 #if defined(__linux__)
         struct {
                 struct {
-                        Atom wmDeleteWindow;
-                        Atom netSupported;
-                        Atom netWmPing;
-                        Atom netWmName;
-                        Atom utf8String;
+                        Atom    wmDeleteWindow;
+                        Atom    netSupported;
+                        Atom    netWmPing;
+                        Atom    netWmName;
+                        Atom    utf8String;
                 } atoms;
 
-                Display  *display;
-                Visual   *visual;
-                Window    root;
-                Window    window;
-                Colormap  colormap;
-                XIM       im;
-                XIC       ic;
-                int       screen;
-                int       depth;
-        };
+                Display        *display;
+                Visual         *visual;
+                Window          root;
+                Window          window;
+                Colormap        colormap;
+                XIM             im;
+                XIC             ic;
+                int             screen;
+                int             depth;
+        } x11;
 
         struct {
                 GLXFBConfig     fbconfig;
@@ -260,12 +264,18 @@ static struct {
         } glx;
 #endif // __linux__
 
-
         struct {
-                struct { int major, minor; } version;
+                struct {
+                        int     major;
+                        int     minor;
+                } version;
         } gl;
 
-        bool quitRequested;
+        tapp_OnInit             onInit;
+        tapp_OnEvent            onEvent;
+        tapp_OnUpdate           onUpdate;
+        tapp_OnQuit             onQuit;
+        bool                    quitRequested;
 } TAPP = {0};
 
 
@@ -277,7 +287,6 @@ bool tapp__Init(tapp_AppDesc const *desc) {
         TAPP.onEvent    = desc->onEvent;
         TAPP.onUpdate   = desc->onUpdate;
         TAPP.onQuit     = desc->onQuit;
-
         return true;
 }
 
@@ -325,11 +334,6 @@ static void tapp__InitX11(tapp_AppDesc const *desc) {
 
         if (!XInternAtoms(glwt.x11.display, atoms, 5, False, (Atom *)&TAPP.x11.atoms)) {
                 tapp__Error("XInternAtoms() failed");
-                tapp__QuitX11();
-                return false;
-        }
-
-        if (!init_x11_atoms()) {
                 tapp__QuitX11();
                 return false;
         }
@@ -439,7 +443,7 @@ int main(int argc, char **argv) {
                 || !tapp__CreateWindowX11(&desc)
                 || !tapp__CreateContextGLX(&desc)
         {
-                return 1;
+                return -1;
         }
 
         TAPP.onInit();
@@ -471,4 +475,3 @@ int main(int argc, char **argv) {
 #endif // !__tiny_app_c__
 #endif // tapp_IMPLEMENTATION
 #endif // !__tiny_app_h__
-

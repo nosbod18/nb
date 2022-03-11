@@ -56,21 +56,15 @@ bool Event(tapp_Event event) {
         if (event.type == tapp_EventType_KeyRelease && event.key.sym == tapp_Key_Escape) {
                 return false;
         }
-
         return true;
 }
 
 void Update(float dt) {
-        tgfx_Bindings bind = {
-                .vertexBuffers[0] = vbo,
-        };
-
         tgfx_BeginPass(cmd, &(tgfx_PassDesc){0});
-                tgfx_UsePipeline(cmd, pip);
-                tgfx_UseBindings(cmd, bind);
+                tgfx_BindBuffer(cmd, vbo);
+                tgfx_BindPipeline(cmd, pip);
                 tgfx_Draw(cmd, 3, 0);
         tgfx_EndPass(cmd);
-
         tgfx_SubmitCommands(cmd);
 }
 
@@ -83,7 +77,7 @@ void Quit(void) {
 
 tapp_AppDesc tapp_Main(int argc, char **argv) {
         return (tapp_AppDesc){
-                .window.title   = "tapp | Hello Triangle",
+                .window.title   = "tapp | Triangle",
                 .onInit         = Init,
                 .onUpdate       = Update,
                 .onQuit         = Quit

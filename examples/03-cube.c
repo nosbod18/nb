@@ -10,7 +10,7 @@ tgfx_Buffer    *vbo = NULL;
 tgfx_Buffer    *ibo = NULL;
 tgfx_Program   *prg = NULL;
 tgfx_Pipeline  *pip = NULL;
-tm_Vector2      rot  = {0};
+tm_Vector2      rot = {0};
 
 void Init(void) {
         cmd = tgfx_CreateBuffer(&(tgfx_BufferDesc){
@@ -50,12 +50,12 @@ void Init(void) {
         });
 
         unsigned short const indices[] = {
-                 0,  1,  2,   0,  2,  3, // North
-                 6,  5,  4,   7,  6,  4, // South
-                 8,  9, 10,   8, 10, 11, // East
-                14, 13, 12,  15, 14, 12, // West
-                16, 17, 18,  16, 18, 19, // Bottom
-                22, 21, 20,  23, 22, 20  // Top
+                 0,  1,  2,   2,  3,  0, // North
+                 4,  5,  6,   6,  7,  4, // South
+                 8,  9, 10,  10, 11,  8, // East
+                12, 13, 14,  14, 15, 12, // West
+                16, 17, 18,  18, 19, 16, // Bottom
+                20, 21, 22,  22, 23, 20  // Top
         };
 
         ibo = tgfx_CreateBuffer(&(tgfx_BufferDesc){
@@ -103,25 +103,21 @@ bool Event(tapp_Event event) {
 void Update(float dt) {
         tm_Matrix proj     = tm_Perspective(60.0f, tapp_GetAspectRatio(), 0.01f, 10.0f);
         tm_Matrix view     = tm_LookAt((tm_Vector3){0.0f, 1.5f, 6.0f}, (tm_Vector3){0}, (tm_Vector3){0.0f, 1.0f, 0.0f});
-        tm_Matrix viewProj = tm_MatrixMul(proj, view);
+        tm_Matrix viewProj = tm_MulMatrix(proj, view);
 
         rot.x += 1.0f * dt;
         rot.y += 2.0f * dt;
 
         tm_Matrix rxm   = tm_Rotate((tm_Vector3){1.0f, 0.0f, 0.0f}, rot.x);
         tm_Matrix rym   = tm_Rotate((tm_Vector3){0.0f, 1.0f, 0.0f}, rot.y);
-        tm_Matrix model = tm_MatrixMul(rxm, rym);
-        tm_Matrix mvp   = tm_MatrixMul(viewProj, model);
-
-        tgfx_Bindings bind = {
-                .vertexBuffers[0] = vbo,
-                .indexBuffer = ibo
-        };
+        tm_Matrix model = tm_MulMatrix(rxm, rym);
+        tm_Matrix mvp   = tm_MulMatrix(viewProj, model);
 
         tgfx_BeginPass(cmd, &(tgfx_PassDesc){0});
                 tgfx_UpdateProgram(prg, 0, &mvp);
-                tgfx_UsePipeline(cmd, pip);
-                tgfx_UseBindings(cmd, bind);
+                tgfx_BindBuffer(cmd, vbo);
+                tgfx_BindBuffer(cmd, ibo);
+                tgfx_BindPipeline(cmd, pip);
                 tgfx_Draw(cmd, 3, 0);
         tgfx_EndPass(cmd);
 
