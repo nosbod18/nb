@@ -53,7 +53,7 @@ void init(void) {
 }
 
 bool event(tapp_event event) {
-        return !(event.type == TAPP_EVENT_KEYUP && event.key.sym == TAPP_KEY_ESCAPE);
+        return !(event.type == TAPP_KEYUP && event.key.sym == TAPP_KEY_ESCAPE);
 }
 
 void update(float dt) {
@@ -75,7 +75,8 @@ void quit(void) {
 tapp_desc tapp_main(int argc, char **argv) {
         return (tapp_desc){
                 .window.title   = "tapp | Triangle",
-                .on_init        = init_,
+                .on_init        = init,
+                .on_event       = event,
                 .on_update      = update,
                 .on_quit        = quit
         };

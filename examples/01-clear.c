@@ -17,7 +17,7 @@ void init(void) {
 }
 
 bool event(tapp_event event){
-        return !(event.type == TAPP_EVENT_KEYUP && event.key.sym == TAPP_KEY_ESCAPE);
+        return !(event.type == TAPP_KEY_UP && event.key.sym == TAPP_KEY_ESCAPE);
 }
 
 void update(float dt) {

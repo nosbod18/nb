@@ -90,7 +90,7 @@ tm_mat4         tm_orthographic                 (float left, float right, float 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef tm_IMPLEMENTATION
+#if defined(tm_IMPLEMENTATION) || defined(TINY_IMPLEMENTATION)
 #ifndef __tiny_math_c__
 #define __tiny_math_c__
 
@@ -468,5 +468,5 @@ tm_mat4 tm_orthographic(float left, float right, float bottom, float top, float 
 }
 
 #endif // !__tiny_math_c__
-#endif // tm_IMPLEMENTATION
+#endif // TM_IMPLEMENTATION || TINY_IMPLEMENTATION
 #endif // !__tiny_math_h

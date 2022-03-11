@@ -91,7 +91,7 @@ void init(void) {
 }
 
 bool event(tapp_event event) {
-        return !(event.type == TAPP_EVENT_KEYUP && event.key.sym == TAPP_KEY_ESCAPE);
+        return !(event.type == TAPP_KEYUP && event.key.sym == TAPP_KEY_ESCAPE);
 }
 
 void update(float dt) {
@@ -106,7 +106,7 @@ void update(float dt) {
         tm_mat4 vp    = tm_mat4_mul(proj, view);
         tm_mat4 mvp   = tm_mat4_mul(vp, m);
 
-        tgfx_begin_pass(cbo, &(tgfx_PassDesc){0});
+        tgfx_begin_pass(cbo, &(tgfx_pass_desc){0});
                 tgfx_program_update(prg, 0, &mvp);
                 tgfx_buffer_bind(cbo, vbo);
                 tgfx_buffer_bind(cbo, ibo);

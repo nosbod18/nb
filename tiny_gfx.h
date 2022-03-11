@@ -130,7 +130,7 @@ void            tgfx_submit             (tgfx_buffer *command);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef TGFX_IMPLEMENTATION
+#if defined(TGFX_IMPLEMENTATION) || defined(TINY_IMPLEMENTATION)
 #ifndef __tiny_gfx_c__
 #define __tiny_gfx_c__
 
@@ -179,7 +179,7 @@ static int tgfx__gl_buffer_type(tgfx_buffer_type type) {
         return 0;
 }
 
-static int tgfx__gl_buffer_usage(tgfx_bufferUsage usage) {
+static int tgfx__gl_buffer_usage(tgfx_buffer_usage usage) {
         switch (usage) {
                 case TGFX_BUFFER_USAGE_STATIC:  return GL_STATIC_DRAW;
                 case TGFX_BUFFER_USAGE_DYNAMIC: return GL_DYNAMIC_DRAW;
@@ -366,5 +366,5 @@ void tgfx_pipeline_delete(tgfx_pipeline *pipeline) {
 
 
 #endif // !__tiny_gfx_c__
-#endif // TGFX_IMPLEMENTATION
+#endif // TGFX_IMPLEMENTATION || TINY_IMPLEMENTATION
 #endif // !__tiny_gfx_h__

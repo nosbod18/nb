@@ -154,22 +154,20 @@ typedef enum tapp_mod {
 } tapp_mod;
 
 typedef enum tapp_event_type {
-        TAPP_EVENT_NONE = 0,
-        TAPP_EVENT_QUIT,
-        TAPP_EVENT_WINDOW_SHOWN,
-        TAPP_EVENT_WINDOW_HIDDEN,
-        TAPP_EVENT_WINDOW_RESIZED,
-        TAPP_EVENT_WINDOW_FOCUSED,
-        TAPP_EVENT_WINDOW_UNFOCUSED,
-        TAPP_EVENT_KEY_PRESSED,
-        TAPP_EVENT_KEY_RELEASED,
-        TAPP_EVENT_MOUSE_PRESSED,
-        TAPP_EVENT_MOUSE_RELEASED,
-        TAPP_EVENT_MOUSE_ENTER,
-        TAPP_EVENT_MOUSE_LEAVE,
-        TAPP_EVENT_MOUSE_MOTION,
-        TAPP_EVENT_MOUSE_SCROLL,
-        TAPP_EVENT_LAST
+        TAPP_NONE = 0,
+        TAPP_KEYUP,
+        TAPP_KEYDOWN,
+        TAPP_MOUSEBUTTONDOWN,
+        TAPP_MOUSEBUTTONUP,
+        TAPP_MOUSEENTER,
+        TAPP_MOUSELEAVE,
+        TAPP_MOUSEMOTION,
+        TAPP_MOUSESCROLL,
+        TAPP_WINDOWVISIBLE,
+        TAPP_WINDOWRESIZE,
+        TAPP_WINDOWFOCUS,
+        TAPP_QUITREQUEST,
+        TAPP_LAST
 } tapp_event_type;
 
 typedef struct tapp_event {
@@ -226,7 +224,7 @@ float           tapp_aspect_ratio       (void);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef TAPP_IMPLEMENTATION
+#if defined(TAPP_IMPLEMENTATION) || defined(TINY_IMPLEMENTATION)
 #ifndef __tiny_app_c__
 #define __tiny_app_c__
 
@@ -287,5 +285,5 @@ int main(int argc, char **argv) {
 #endif // __linux__
 
 #endif // !__tiny_app_c__
-#endif // TAPP_IMPLEMENTATION
+#endif // TAPP_IMPLEMENTATION || TINY_IMPLEMENTATION
 #endif // !__tiny_app_h__
