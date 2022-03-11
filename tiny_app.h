@@ -3,188 +3,194 @@
 
 #include <stdbool.h>
 
-typedef enum tapp_Key {
-        tapp_Key_Invalid                = 0x00,
-        tapp_Key_Backspace              = 0x08,
-        tapp_Key_Tab                    = 0x09,
-        tapp_Key_Escape                 = 0x1b,
-        tapp_Key_Space                  = ' ',
-        tapp_Key_Bang                   = '!',
-        tapp_Key_Quote                  = '\"',
-        tapp_Key_Pound                  = '#',
-        tapp_Key_Dollar                 = '$',
-        tapp_Key_Percent                = '%',
-        tapp_Key_Ampersan               = '&',
-        tapp_Key_Apostrophe             = '\'',
-        tapp_Key_LeftParentheses        = '(',
-        tapp_Key_RightParentheses       = ')',
-        tapp_Key_Asterisk               = '*',
-        tapp_Key_Plus                   = '+',
-        tapp_Key_Comma                  = ',',
-        tapp_Key_Minus                  = '-',
-        tapp_Key_Period                 = '.',
-        tapp_Key_ForswardSlash           = '/',
-        tapp_Key_0                      = '0',
-        tapp_Key_1                      = '1',
-        tapp_Key_2                      = '2',
-        tapp_Key_3                      = '3',
-        tapp_Key_4                      = '4',
-        tapp_Key_5                      = '5',
-        tapp_Key_6                      = '6',
-        tapp_Key_7                      = '7',
-        tapp_Key_8                      = '8',
-        tapp_Key_9                      = '9',
-        tapp_Key_Colon                  = ':',
-        tapp_Key_SemiColon              = ';',
-        tapp_Key_LeftAngleBracket       = '<',
-        tapp_Key_Equals                 = '=',
-        tapp_Key_RightAngleBracket      = '>',
-        tapp_Key_QuestionMark           = '?',
-        tapp_Key_At                     = '@',
-        tapp_Key_A                      = 'A',
-        tapp_Key_B                      = 'B',
-        tapp_Key_C                      = 'C',
-        tapp_Key_D                      = 'D',
-        tapp_Key_E                      = 'E',
-        tapp_Key_F                      = 'F',
-        tapp_Key_G                      = 'G',
-        tapp_Key_H                      = 'H',
-        tapp_Key_I                      = 'I',
-        tapp_Key_J                      = 'J',
-        tapp_Key_K                      = 'K',
-        tapp_Key_L                      = 'L',
-        tapp_Key_M                      = 'M',
-        tapp_Key_N                      = 'N',
-        tapp_Key_O                      = 'O',
-        tapp_Key_P                      = 'P',
-        tapp_Key_Q                      = 'Q',
-        tapp_Key_R                      = 'R',
-        tapp_Key_S                      = 'S',
-        tapp_Key_T                      = 'T',
-        tapp_Key_U                      = 'U',
-        tapp_Key_V                      = 'V',
-        tapp_Key_W                      = 'W',
-        tapp_Key_X                      = 'X',
-        tapp_Key_Y                      = 'Y',
-        tapp_Key_Z                      = 'Z',
-        tapp_Key_LeftBracket            = '[',
-        tapp_Key_Backslash              = '\\',
-        tapp_Key_RightBracket           = ']',
-        tapp_Key_Carrot                 = '^',
-        tapp_Key_Underscore             = '_',
-        tapp_Key_GraveAccent            = '`',
-        tapp_Key_LeftCurlyBrace         = '{',
-        tapp_Key_VerticalBar            = '|',
-        tapp_Key_RightCurlyBrace        = '}',
-        tapp_Key_Tilda                  = '~',
-        tapp_Key_Delete                 = 0x7f,
-        tapp_Key_Keypad_0               = 0x80,
-        tapp_Key_Keypad_1               = 0x81,
-        tapp_Key_Keypad_2               = 0x82,
-        tapp_Key_Keypad_3               = 0x83,
-        tapp_Key_Keypad_4               = 0x84,
-        tapp_Key_Keypad_5               = 0x85,
-        tapp_Key_Keypad_6               = 0x86,
-        tapp_Key_Keypad_7               = 0x87,
-        tapp_Key_Keypad_8               = 0x88,
-        tapp_Key_Keypad_9               = 0x89,
-        tapp_Key_Keypad_Separator       = 0x8a,
-        tapp_Key_Keypad_ForswardSlash    = 0x8b,
-        tapp_Key_Keypad_Asterisk        = 0x8c,
-        tapp_Key_Keypad_Plus            = 0x8d,
-        tapp_Key_Keypad_Minus           = 0x8e,
-        tapp_Key_Keypad_Enter           = 0x8f,
-        tapp_Key_Up                     = 0x90,
-        tapp_Key_Down                   = 0x91,
-        tapp_Key_Left                   = 0x92,
-        tapp_Key_Right                  = 0x93,
-        tapp_Key_PageUp                 = 0x94,
-        tapp_Key_PageDown               = 0x95,
-        tapp_Key_Home                   = 0x96,
-        tapp_Key_End                    = 0x97,
-        tapp_Key_Insert                 = 0x98,
-        tapp_Key_F1                     = 0xa0,
-        tapp_Key_F2                     = 0xa2,
-        tapp_Key_F3                     = 0xa3,
-        tapp_Key_F4                     = 0xa4,
-        tapp_Key_F5                     = 0xa5,
-        tapp_Key_F6                     = 0xa6,
-        tapp_Key_F7                     = 0xa7,
-        tapp_Key_F8                     = 0xa8,
-        tapp_Key_F9                     = 0xa9,
-        tapp_Key_F10                    = 0xaa,
-        tapp_Key_F11                    = 0xab,
-        tapp_Key_F12                    = 0xac,
-        tapp_Key_LeftShift              = 0xb0,
-        tapp_Key_RightShift             = 0xb1,
-        tapp_Key_LeftControl            = 0xb2,
-        tapp_Key_RightControl           = 0xb3,
-        tapp_Key_LeftAlt                = 0xb4,
-        tapp_Key_RightAlt               = 0xb5,
-        tapp_Key_LeftSuper              = 0xb6,
-        tapp_Key_RightSuper             = 0xb7,
-        tapp_Key_Menu                   = 0xb8,
-        tapp_Key_AltGR                  = 0xb9,
-        tapp_Key_NumLock                = 0xba,
-        tapp_Key_CapsLock               = 0xbb,
-        tapp_Key_ScrollLock             = 0xbc,
-        tapp_Key_COUNT                  = 0x100
-} tapp_Key;
+typedef enum tapp_key {
+        TAPP_KEY_INVALID                = 0x00,
+        TAPP_KEY_BACKSPACE              = 0x08,
+        TAPP_KEY_TAB                    = 0x09,
+        TAPP_KEY_ESCAPE                 = 0x1b,
+        TAPP_KEY_SPACE                  = ' ',
+        TAPP_KEY_BANG                   = '!',
+        TAPP_KEY_QUOTE                  = '\"',
+        TAPP_KEY_POUND                  = '#',
+        TAPP_KEY_DOLLAR                 = '$',
+        TAPP_KEY_PERCENT                = '%',
+        TAPP_KEY_AMPERSAN               = '&',
+        TAPP_KEY_APOSTROPHE             = '\'',
+        TAPP_KEY_LEFT_PARENTHESES       = '(',
+        TAPP_KEY_RIGHT_PARENTHESES      = ')',
+        TAPP_KEY_ASTERISK               = '*',
+        TAPP_KEY_PLUS                   = '+',
+        TAPP_KEY_COMMA                  = ',',
+        TAPP_KEY_MINUS                  = '-',
+        TAPP_KEY_PERIOD                 = '.',
+        TAPP_KEY_FORWARD_SLASH          = '/',
+        TAPP_KEY_0                      = '0',
+        TAPP_KEY_1                      = '1',
+        TAPP_KEY_2                      = '2',
+        TAPP_KEY_3                      = '3',
+        TAPP_KEY_4                      = '4',
+        TAPP_KEY_5                      = '5',
+        TAPP_KEY_6                      = '6',
+        TAPP_KEY_7                      = '7',
+        TAPP_KEY_8                      = '8',
+        TAPP_KEY_9                      = '9',
+        TAPP_KEY_COLON                  = ':',
+        TAPP_KEY_SEMICOLON              = ';',
+        TAPP_KEY_LEFT_ANGLE_BRACKET     = '<',
+        TAPP_KEY_EQUALS                 = '=',
+        TAPP_KEY_RIGHT_ANGLE_BRACKET    = '>',
+        TAPP_KEY_QUESTION_MARK          = '?',
+        TAPP_KEY_AT                     = '@',
+        TAPP_KEY_A                      = 'A',
+        TAPP_KEY_B                      = 'B',
+        TAPP_KEY_C                      = 'C',
+        TAPP_KEY_D                      = 'D',
+        TAPP_KEY_E                      = 'E',
+        TAPP_KEY_F                      = 'F',
+        TAPP_KEY_G                      = 'G',
+        TAPP_KEY_H                      = 'H',
+        TAPP_KEY_I                      = 'I',
+        TAPP_KEY_J                      = 'J',
+        TAPP_KEY_K                      = 'K',
+        TAPP_KEY_L                      = 'L',
+        TAPP_KEY_M                      = 'M',
+        TAPP_KEY_N                      = 'N',
+        TAPP_KEY_O                      = 'O',
+        TAPP_KEY_P                      = 'P',
+        TAPP_KEY_Q                      = 'Q',
+        TAPP_KEY_R                      = 'R',
+        TAPP_KEY_S                      = 'S',
+        TAPP_KEY_T                      = 'T',
+        TAPP_KEY_U                      = 'U',
+        TAPP_KEY_V                      = 'V',
+        TAPP_KEY_W                      = 'W',
+        TAPP_KEY_X                      = 'X',
+        TAPP_KEY_Y                      = 'Y',
+        TAPP_KEY_Z                      = 'Z',
+        TAPP_KEY_LEFT_BRACKET           = '[',
+        TAPP_KEY_BACKSLASH              = '\\',
+        TAPP_KEY_RIGHT_BRACKET          = ']',
+        TAPP_KEY_CARROT                 = '^',
+        TAPP_KEY_UNDERSCORE             = '_',
+        TAPP_KEY_GRAVE_ACCENT           = '`',
+        TAPP_KEY_LEFT_CURLY_BRACE       = '{',
+        TAPP_KEY_VERTICALbAR            = '|',
+        TAPP_KEY_RIGHT_CURLY_BRACE      = '}',
+        TAPP_KEY_TILDA                  = '~',
+        TAPP_KEY_DELETE                 = 0x7f,
+        TAPP_KEY_KEYPAD_0               = 0x80,
+        TAPP_KEY_KEYPAD_1               = 0x81,
+        TAPP_KEY_KEYPAD_2               = 0x82,
+        TAPP_KEY_KEYPAD_3               = 0x83,
+        TAPP_KEY_KEYPAD_4               = 0x84,
+        TAPP_KEY_KEYPAD_5               = 0x85,
+        TAPP_KEY_KEYPAD_6               = 0x86,
+        TAPP_KEY_KEYPAD_7               = 0x87,
+        TAPP_KEY_KEYPAD_8               = 0x88,
+        TAPP_KEY_KEYPAD_9               = 0x89,
+        TAPP_KEY_KEYPAD_SEPARATOR       = 0x8a,
+        TAPP_KEY_KEYPAD_FORWARD_SLASH   = 0x8b,
+        TAPP_KEY_KEYPAD_ASTERISK        = 0x8c,
+        TAPP_KEY_KEYPAD_PLUS            = 0x8d,
+        TAPP_KEY_KEYPAD_MINUS           = 0x8e,
+        TAPP_KEY_KEYPAD_ENTER           = 0x8f,
+        TAPP_KEY_UP                     = 0x90,
+        TAPP_KEY_DOWN                   = 0x91,
+        TAPP_KEY_LEFT                   = 0x92,
+        TAPP_KEY_RIGHT                  = 0x93,
+        TAPP_KEY_PAGE_UP                = 0x94,
+        TAPP_KEY_PAGE_DOWN              = 0x95,
+        TAPP_KEY_HOME                   = 0x96,
+        TAPP_KEY_END                    = 0x97,
+        TAPP_KEY_INSERT                 = 0x98,
+        TAPP_KEY_F1                     = 0xa0,
+        TAPP_KEY_F2                     = 0xa2,
+        TAPP_KEY_F3                     = 0xa3,
+        TAPP_KEY_F4                     = 0xa4,
+        TAPP_KEY_F5                     = 0xa5,
+        TAPP_KEY_F6                     = 0xa6,
+        TAPP_KEY_F7                     = 0xa7,
+        TAPP_KEY_F8                     = 0xa8,
+        TAPP_KEY_F9                     = 0xa9,
+        TAPP_KEY_F10                    = 0xaa,
+        TAPP_KEY_F11                    = 0xab,
+        TAPP_KEY_F12                    = 0xac,
+        TAPP_KEY_LEFT_SHIFT             = 0xb0,
+        TAPP_KEY_RIGHT_SHIFT            = 0xb1,
+        TAPP_KEY_LEFT_CONTROL           = 0xb2,
+        TAPP_KEY_RIGHT_CONTROL          = 0xb3,
+        TAPP_KEY_LEFT_ALT               = 0xb4,
+        TAPP_KEY_RIGHT_ALT              = 0xb5,
+        TAPP_KEY_LEFT_SUPER             = 0xb6,
+        TAPP_KEY_RIGHT_SUPER            = 0xb7,
+        TAPP_KEY_MENU                   = 0xb8,
+        TAPP_KEY_ALTGR                  = 0xb9,
+        TAPP_KEY_NUM_LOCK               = 0xba,
+        TAPP_KEY_CAPS_LOCK              = 0xbb,
+        TAPP_KEY_SCROLL_LOCK            = 0xbc,
+        TAPP_KEY_LAST                   = 0x100
+} tapp_key;
 
-typedef enum tapp_MouseButton {
-        tapp_MouseButton_Left           = 0,
-        tapp_MouseButton_Middle         = 1,
-        tapp_MouseButton_Right          = 2,
-        tapp_MouseButton_COUNT,
-} tapp_MouseButton;
+typedef enum tapp_mouse_button {
+        TAPP_MOUSE_BUTTON_1 = 0,
+        TAPP_MOUSE_BUTTON_2,
+        TAPP_MOUSE_BUTTON_3,
+        TAPP_MOUSE_BUTTON_4,
+        TAPP_MOUSE_BUTTON_5,
+        tapp_mouse_button_LAST,
+        TAPP_MOUSE_BUTTON_LEFT          = TAPP_MOUSE_BUTTON_1,
+        TAPP_MOUSE_BUTTON_MIDDLE        = TAPP_MOUSE_BUTTON_2,
+        TAPP_MOUSE_BUTTON_RIGHT         = TAPP_MOUSE_BUTTON_3,
+} tapp_mouse_button;
 
-typedef enum tapp_Mod {
-        tapp_Mod_Shift                  = 1 << 0,
-        tapp_Mod_Control                = 1 << 1,
-        tapp_Mod_Alt                    = 1 << 2,
-        tapp_Mod_Super                  = 1 << 3,
-        tapp_Mod_NumLock                = 1 << 4,
-        tapp_Mod_CapsLock               = 1 << 5,
-        tapp_Mod_COUNT,
-} tapp_Mod;
+typedef enum tapp_mod {
+        TAPP_MOD_SHIFT     = 1 << 0,
+        TAPP_MOD_CONTROL   = 1 << 1,
+        TAPP_MOD_ALT       = 1 << 2,
+        TAPP_MOD_SUPER     = 1 << 3,
+        TAPP_MOD_NUM_LOCK  = 1 << 4,
+        TAPP_MOD_CAPS_LOCK = 1 << 5,
+        TAPP_MOD_LAST,
+} tapp_mod;
 
-typedef enum tapp_EventType {
-        tapp_EventType_None = 0,
-        tapp_EventType_Quit,
-        tapp_EventType_WindowShown,
-        tapp_EventType_WindowHidden,
-        tapp_EventType_WindowResized,
-        tapp_EventType_WindowFocused,
-        tapp_EventType_WindowUnfocused,
-        tapp_EventType_KeyPress,
-        tapp_EventType_KeyRelease,
-        tapp_EventType_MousePress,
-        tapp_EventType_MouseRelease,
-        tapp_EventType_MouseEnter,
-        tapp_EventType_MouseLeave,
-        tapp_EventType_MouseMotion,
-        tapp_EventType_MouseScroll,
-        tapp_EventType_COUNT
-} tapp_EventType;
+typedef enum tapp_event_type {
+        TAPP_EVENT_NONE = 0,
+        TAPP_EVENT_QUIT,
+        TAPP_EVENT_WINDOW_SHOWN,
+        TAPP_EVENT_WINDOW_HIDDEN,
+        TAPP_EVENT_WINDOW_RESIZED,
+        TAPP_EVENT_WINDOW_FOCUSED,
+        TAPP_EVENT_WINDOW_UNFOCUSED,
+        TAPP_EVENT_KEY_PRESSED,
+        TAPP_EVENT_KEY_RELEASED,
+        TAPP_EVENT_MOUSE_PRESSED,
+        TAPP_EVENT_MOUSE_RELEASED,
+        TAPP_EVENT_MOUSE_ENTER,
+        TAPP_EVENT_MOUSE_LEAVE,
+        TAPP_EVENT_MOUSE_MOTION,
+        TAPP_EVENT_MOUSE_SCROLL,
+        TAPP_EVENT_LAST
+} tapp_event_type;
 
-typedef struct tapp_Event {
-        tapp_EventType type;
+typedef struct tapp_event {
+        tapp_event_type type;
         union {
                 struct { int dummy;             } nop;
+                struct { bool focused;          } focus;
                 struct { int width, height;     } resize;
                 struct { int sym, mods;         } key;
                 struct { int x, y, button, mods;} mouse;
                 struct { int x, y, buttons;     } motion;
                 struct { double x, y;           } scroll;
         };
-} tapp_Event;
+} tapp_event;
 
-typedef void (*tapp_OnInit)(void);
-typedef bool (*tapp_OnEvent)(tapp_Event event);
-typedef void (*tapp_OnUpdate)(float dt);
-typedef void (*tapp_OnQuit)(void);
+typedef void (*tapp_init_callback)(void);
+typedef bool (*tapp_event_callback)(tapp_event event);
+typedef void (*tapp_update_callback)(float dt);
+typedef void (*tapp_quit_callback)(void);
 
-typedef struct tapp_AppDesc {
+typedef struct tapp_desc {
         struct {
                 char const *title;
                 int  width;
@@ -197,15 +203,16 @@ typedef struct tapp_AppDesc {
                 struct { int major, minor; } version;
         } context;
 
-        tapp_OnInit     onInit;
-        tapp_OnEvent    onEvent;
-        tapp_OnUpdate   onUpdate;
-        tapp_OnQuit     onQuit;
-} tapp_AppDesc;
+        tapp_init_callback     on_init;
+        tapp_event_callback    on_event;
+        tapp_update_callback   on_update;
+        tapp_quit_callback     on_quit;
+} tapp_desc;
 
 
-extern tapp_AppDesc     tapp_Main               (int argc, char **argv);
-float                   tapp_GetAspectRatio     (void);
+tapp_desc       tapp_main               (int argc, char **argv);
+void            tapp_request_quit       (void);
+float           tapp_aspect_ratio       (void);
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -219,74 +226,30 @@ float                   tapp_GetAspectRatio     (void);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef tapp_IMPLEMENTATION
+#ifdef TAPP_IMPLEMENTATION
 #ifndef __tiny_app_c__
 #define __tiny_app_c__
 
 #include <assert.h>
 
-#if defined(__linux__)
-        #include <X11/Xlib.h>
-        #include <X11/Xutil.h>
-        #include <X11/XKBlib.h>
-        #include <X11/Xresource.h>
-        #define GLX_GLXEXT_PROTOTYPES
-        #include <GL/glx.h>
-#endif // __linux__
-
 static struct {
-#if defined(__linux__)
-        struct {
-                struct {
-                        Atom    wmDeleteWindow;
-                        Atom    netSupported;
-                        Atom    netWmPing;
-                        Atom    netWmName;
-                        Atom    utf8String;
-                } atoms;
-
-                Display        *display;
-                Visual         *visual;
-                Window          root;
-                Window          window;
-                Colormap        colormap;
-                XIM             im;
-                XIC             ic;
-                int             screen;
-                int             depth;
-        } x11;
-
-        struct {
-                GLXFBConfig     fbconfig;
-                GLXWindow       surface;
-                GLXContext      context;
-                int             visualId;
-        } glx;
-#endif // __linux__
-
-        struct {
-                struct {
-                        int     major;
-                        int     minor;
-                } version;
-        } gl;
-
-        tapp_OnInit             onInit;
-        tapp_OnEvent            onEvent;
-        tapp_OnUpdate           onUpdate;
-        tapp_OnQuit             onQuit;
-        bool                    quitRequested;
+        tapp_init_callback on_init;
+        tapp_event_callback on_event;
+        tapp_update_callback on_update;
+        tapp_quit_callback on_quit;
+        bool should_quit;
+        bool will_quit;
 } TAPP = {0};
 
 
 //==============================================================
 // General
 
-bool tapp__Init(tapp_AppDesc const *desc) {
-        TAPP.onInit     = desc->onInit;
-        TAPP.onEvent    = desc->onEvent;
-        TAPP.onUpdate   = desc->onUpdate;
-        TAPP.onQuit     = desc->onQuit;
+bool tapp__init(tapp_desc const *desc) {
+        TAPP.on_init     = desc->on_init;
+        TAPP.on_event    = desc->on_event;
+        TAPP.on_update   = desc->on_update;
+        TAPP.on_quit     = desc->on_quit;
         return true;
 }
 
@@ -295,183 +258,34 @@ bool tapp__Init(tapp_AppDesc const *desc) {
 
 #if defined(__linux__)
 
-static void tapp__QuitX11(void) {
-}
-
-static void tapp__InitX11(tapp_AppDesc const *desc) {
-        XInitThreads();
-
-        TAPP.x11.display = XOpenDisplay(NULL)
-        if (!TAPP.x11.display) {
-                tapp__Error("XOpenDisplay() failed");
-                return false;
-        }
-
-        TAPP.x11.screen = DefaultScreen(TAPP.x11.display);
-        TAPP.x11.root = RootWindow(TAPP.x11.display, TAPP.x11.screen);
-
-        int unused[5];
-        if (!XkbQueryExtension(TAPP.x11.display, &unused[0], &unused[1], &unused[2], &unused[3], &unused[4])) {
-                tapp__Error("Xkb extension missing");
-                tapp__QuitX11();
-                return false;
-        }
-
-        TAPP.x11.im = XOpenIM(TAPP.x11.display, NULL, NULL, NULL);
-        if (!TAPP.x11.im) {
-                tapp__Error("XOpenIM() failed");
-                tapp__QuitX11();
-                return false;
-        }
-
-        char *atoms[] = {
-                "WM_DELETE_WINDOW",
-                "_NET_SUPPORTED",
-                "_NET_WM_PING",
-                "_NET_WM_NAME",
-                "UTF8_STRING"
-        };
-
-        if (!XInternAtoms(glwt.x11.display, atoms, 5, False, (Atom *)&TAPP.x11.atoms)) {
-                tapp__Error("XInternAtoms() failed");
-                tapp__QuitX11();
-                return false;
-        }
-
-        XVisualInfo tmp = {
-                .visualId = TAPP.glx.visualId,
-        };
-
-        int numVis;
-        XVisualInfo *vi = XGetVisualInfo(TAPP.x11.display, VisualIDMask, &tmp, &numVis);
-        if (!vi || numVis < 1) {
-                XFree(vi);
-                tapp__Error("XGetVisualInfo() failed");
-                tapp__QuitX11();
-                return false;
-        }
-
-        TAPP.x11.visual = vi->visual;
-        TAPP.x11.depth = vi->depth;
-        XFree(vi);
-
-        TAPP.x11.colormap = XCreateColormap(TAPP.x11.display, TAPP.x11.root, TAPP.x11.visual, AllocNone);
-        if (!TAPP.x11.colormap) {
-                tapp__Error("XCreateColormap() failed");
-                tapp__QuitX11();
-                return false;
-        }
-
-        return true;
-}
-
-static void tapp__DeleteWindowX11(void) {
-        if (TAPP.x11.display) {
-                if (TAPP.x11.colormap) {
-                        XFreeColormap(TAPP.x11.display, TAPP.x11.colormap);
-                }
-                if (TAPP.x11.im) {
-                        XCloseIM(TAPP.x11.xim);
-                }
-                XCloseDisplay(TAPP.x11.display);
-        }
-}
-
-static bool tapp__InitWindowX11(tapp_AppDesc const *desc, Visual *vi, int depth) {
-        XSetWindowAttributes swa = {
-                .colormap = TAPP.x11.colormap,
-                .eventMask = StructureNotifyMask
-                               | PointerMotionMask
-                               | ButtonPressMask
-                               | ButtonReleaseMask
-                               | KeyPressMask
-                               | KeyReleaseMask
-                               | EnterWindowMask
-                               | LeaveWindowMask
-                               | FocusChangeMask
-                               | ExposureMask,
-        };
-
-        int width             = desc->window.width  ? desc->window.width  : 640;
-        int height            = desc->window.height ? desc->window.height : 640;
-        unsigned long swaMask = CWColormap | CWEventMask;
-
-        TAPP.x11.window = XCreateWindow(TAPP.x11.display, TAPP.x11.root, 0, 0, width, height, 0, TAPP.x11.depth, InputOutput, TAPP.x11.visual, swaMask, &swa);
-
-        if (!TAPP.x11.window) {
-               tapp__Error("XCreateWindow failed");
-               tapp__FreeWindowX11();
-               return false;
-        }
-
-        Atom protocols[] = {
-            TAPP.x11.wmDeleteWindow,
-            TAPP.x11.netWmPing,
-        };
-
-        if (XSetWMProtocols(TAPP.x11.display, TAPP.x11.window, protocols, sizeof protocols / sizeof *protocols) == 0) {
-               tapp__Error("XSetWMProtocols failed");
-               tapp__FreeWindowX11();
-               return false;
-        }
-
-        TAPP.x11.ic = XCreateIC(TAPP.x11.xim, XNInputStyle, XIMPreeditNothing | XIMStatusNothing, XNClientWindow, TAPP.x11.window, XNFocusWindow, TAPP.x11.window, NULL);
-        if (!TAPP.x11.ic) {
-               tapp__Error("XCreateIC failed");
-               tapp__FreeWindowX11();
-               return false;
-        }
-
-        XChangeProperty(TAPP.x11.display, TAPP.x11.window, TAPP.x11.netWmName, TAPP.x11.utf8String, 8, PropModeReplace, (unsigned char *)desc->window.title, strlen(desc->window.title));
-        XMapRaised(TAPP.x11.display, TAPP.x11.window);
-        XFlush(TAPP.x11.display);
-        return true;
-}
-
-static void tapp__DeleteContextGLX(void) {
-        // Nothing
-}
-
-static bool tapp__CreateContextGLX(tapp_AppDesc const *desc) {
-}
-
 int main(int argc, char **argv) {
-        tapp_AppDesc desc = tapp_Main(argc, argv);
+        tapp_desc desc = tapp_main(argc, argv);
 
-        if (!tapp__Init(&desc)
-                || !tapp__InitX11(&desc)
-                || !tapp__CreateWindowX11(&desc)
-                || !tapp__CreateContextGLX(&desc)
-        {
+        if (!tapp__init(&desc) || !tapp__window_create_xcb(&desc) {
                 return -1;
         }
 
-        TAPP.onInit();
+        TAPP.on_init();
 
-        while (!TAPP.quitRequested) {
-                int pending = XPending(TAPP.x11.display);
-                while (pending--) {
-                        XEvent event;
-                        XNextEvent(TAPP.x11.display, &event);
-                        if (!TAPP.OnEvent(tapp__CreateEventX11(&event))) {
-                                TAPP.quitRequested = true;
+        while (!TAPP.will_quit) {
+                while (1) {
+                        if (!TAPP.on_event(tapp__translate_event_xcb(&event))) {
+                                TAPP.will_quit = true;
                         }
                 }
 
-                TAPP.onUpdate(dt);
-                tapp_swapBuffersGLX();
+                TAPP.on_update(dt);
         }
 
-        TAPP.onQuit();
+        TAPP.on_quit();
 
-        tapp__DeleteWindowX11();
-        tapp__QuitX11();
-        tapp__Quit();
+        tapp__window_delete_xcb();
+        tapp__quit();
         return 0;
 }
 
 #endif // __linux__
 
 #endif // !__tiny_app_c__
-#endif // tapp_IMPLEMENTATION
+#endif // TAPP_IMPLEMENTATION
 #endif // !__tiny_app_h__

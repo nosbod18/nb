@@ -1,120 +1,110 @@
 #ifndef __tiny_ds_h__
 #define __tiny_ds_h__
 
-#include <string.h> // memmove
+#include <string.h> // memmove, memcpy, memcmp
 #include <stddef.h> // size_t
 
 
 // ======== General ============================================
 
-// ---- Public -----------------
+// ---- public -----------------
 
 
-// ---- Private ----------------
+// ---- private ----------------
 
-typedef struct tds__Header {
-        void      *data; // Suplementary data, not the actual data of the structure
-        size_t     length;
-        size_t     capacity;
-        ptrdiff_t  temp;
-} tds__Header;
+#define tds__join_impl(x, y) x##y
+#define tds__join(x, y) tds__join_impl(x, y)
+#define tds__var(x) tds__join(x, __LINE__)
 
-#define tds__GetHeader(a) ((tds__Header *)a - 1)
+// ======== array ==============================================
 
-#define tds__JoinImpl(x, y) x##y
-#define tds__Join(x, y) tds__JoinImpl(x, y)
+// ---- public -----------------
 
-// ======== Array ==============================================
-
-// ---- Public -----------------
-
-#ifndef tds_ARRAY_INIT_LENGTH
-        #define tds_ARRAY_INIT_LENGTH 16
+#ifndef TDS_ARRAY_INIT_LEN
+        #define TDS_ARRAY_INIT_LEN 16
 #endif
 
-#define tds_Array(T)                    T *
-#define tds_Array_Init(a)               (a = NULL, tds_Array__Realloc(&tds__GetHeader(a), tds_ARRAY_INIT_LENGTH, sizeof *a))
-#define tds_Array_Free(a)               (tds_Array__Realloc(&tds__GetHeader(a), 0, 0), a = NULL)
-#define tds_Array_Capacity(a)           (a ? tds__GetHeader(a)->capacity : 0)
-#define tds_Array_Length(a)             (a ? tds__GetHeader(a)->length : 0)
-#define tds_Array_Clear(a)              (a ? (tds__GetHeader(a)->length = 0, 0) : 0)
-#define tds_Array_Reserve(a, n)         (tds_Array__Check(a, n))
-#define tds_Array_Put(a, i, val)        (tds_Array__Check(a, 1) ? (memmove(a + (i) + 1, a + (i), (tds__GetHeader(a)->length - (i)) * sizeof *a), tds__GetHeader(a)->length++, a[i] = val, 0) : 0)
-#define tds_Array_Del(a, i)             (tds_Array__Check(a, 0) ? (memmove(a + (i), a + (i) + 1, (tds__GetHeader(a)->length - (i)) * sizeof *a), tds__GetHeader(a)->length--), 0) : 0)
-#define tds_Array_DelSwap(a, i)         (tds_Array__Check(a, 0) ? (a[i] = a[--tds__GetHeader(a)->length], 0) : 0)
-#define tds_Array_Push(a, val)          (tds_Array__Check(a, 1) ? (a[tds__GetHeader(a)->length++] = val, 0) : 0)
-#define tds_Array_Pop(a)                (tds_Array__Check(a, 0) ? (a[--tds__GetHeader(a)->length]), 0 : 0)
+#define tds_array(T)                    T *
+#define tds_array_init(a)               ((a) = NULL, tds_array__realloc((size_t **)&(a), TDS_ARRAY_INIT_LEN, sizeof *(a)))
+#define tds_array_free(a)               (tds_array__realloc(&(size_t **)&(a), 0, 0), (a) = NULL)
+#define tds_array_cap(a)                ((a) ?  (size_t *(a))[-1] : 0)
+#define tds_array_len(a)                ((a) ?  (size_t *(a))[-2] : 0)
+#define tds_array_clear(a)              ((a) ? ((size_t *(a))[-1] = 0, 0) : 0)
+#define tds_array_reserve(a, n)         (tds_array__check((a), n))
+#define tds_array_put(a, i, val)        (tds_array__check((a), 1) ? (memmove((a) + (i) + 1, (a) + (i), ((size_t *(a))[-1] - (i)) * sizeof *(a)), (size_t *(a))[-1]++, (a)[i] = val, 0) : 0)
+#define tds_array_del(a, i)             (tds_array__check((a), 0) ? (memmove((a) + (i), (a) + (i) + 1, ((size_t *(a))[-1] - (i)) * sizeof *(a)), (size_t *(a))[-1]--, 0) : 0)
+#define tds_array_delswap(a, i)         (tds_array__check((a), 0) ? ((a)[i] = (a)[--(size_t *(a))[-1]], 0) : 0)
+#define tds_array_push(a, val)          (tds_array__check((a), 1) ? ((a)[(size_t *(a))[-1]++] = val, 0) : 0)
+#define tds_array_pop(a)                (tds_array__check((a), 0) ? ((a)[--(size_t *(a))[-1]], 0) : 0)
 
-#define tds_Array_Foreach(x, a, ...)\
+#define tds_array_foreach(x, a, ...)\
         do {\
-                for (int tds__Join(_i, __LINE__) = 0; tds__Join(_i, __LINE__) < tds_Array_Length(a); tds__Join(_i, __LINE__)++) {\
-                        x = a[tds__Join(_i, __LINE__)];\
+                for (int tds__var(_i) = 0; tds__var(_i) < tds_array_len((a)); tds__var(_i)++) {\
+                        x = (a)[tds__var(_i)];\
                         __VA_ARGS__\
                 }\
         } while (0)
 
-// ---- Private ----------------
+// ---- private ----------------
 
-#define tds_Array__Check(a, n)\
-        (a == NULL\
-                ? tds_Array__Realloc(&tds__GetHeader(a), tds_ARRAY_INIT_LENGTH, sizeof *a)\
-                : tds_Array_Length(a) + (n) >= tds_Array_Capacity(a)\
-                        ? tds_Array__Realloc(&tds__GetHeader(a), tds_Array_Length(a) << 1 + (n), sizeof *a)\
-                        : tds_Array_Length(a) <= tds_Array_Capacity(a) >> 2\
-                                ? tds_Array__Realloc(&tds__GetHeader(a), tds_Array_Capacity(a) >> 1, sizeof *a)\
+#define tds_array__check(a, n)\
+        ((a) == NULL\
+                ? tds_array__realloc(&(size_t **)&(a), TDS_ARRAY_INIT_LEN, sizeof *(a))\
+                : tds_array_len((a)) + (n) >= tds_array_cap((a))\
+                        ? tds_array__realloc(&(size_t **)&(a), tds_array_len((a)) << 1 + (n), sizeof *(a))\
+                        : tds_array_len((a)) <= tds_array_cap((a)) >> 2\
+                                ? tds_array__realloc(&(size_t **)&(a), tds_array_cap((a)) >> 1, sizeof *(a))\
                                 : 1)
 
-void tds_Array__Realloc(tds__Header **a, size_t n, size_t asize);
+int tds_array__realloc(size_t **a, size_t n, size_t asize);
 
-// ======== Map ================================================
+// ======== map ================================================
 
-// ---- Public -----------------
+// ---- public -----------------
 
-#ifndef tds_MAP_INIT_LENGTH
-        #define tds_MAP_INIT_LENGTH 16
-#endif
+#define tds_map(K, V)                   struct { struct { K key; V val; int active; } tmp, *data; }
+#define tds_map_init(m)                 (tds_array_init(m.data))
+#define tds_map_free(m)                 (tds_array_free(m.data))
+#define tds_map_len(m)                  (tds_array_len(m.data))
+#define tds_map_cap(m)                  (tds_array_cap(m.data))
+#define tds_map_clear(m)                (tds_array_clear(m.data))
+#define tds_map_reserve(m, n)           (tds_array_reserve(m.data, n))
 
-#define tds_Map(K, V)                   struct { struct { K key; V val; int active; } tmp, *data; }
-#define tds_Map_Init(m)                 (tds_Array_Init(m.data))
-#define tds_Map_Free(m)                 (tds_Array_Free(m.data))
-#define tds_Map_Length(m)               (tds_Array_Length(m.data))
-#define tds_Map_Capacity(m)             (tds_Array_Capacity(m.data))
-#define tds_Map_Clear(m)                (tds_Array_Clear(m.data))
-#define tds_Map_Reserve(m, n)           (tds_Array_Reserve(m.data, n))
-
-#define tds_Map_Put(m, k, v)            (m.tmp.key = k, m.tmp.val = v,  tds_Map__Put((char *)m.data, m.tmp.k, sizeof m.tmp.k, m.tmp.v, sizeof m.tmp.v))
-#define tds_Map_Del(m, k)               (m.tmp.key = k, tds_Map__Del((char *)m.data, m.tmp.k, sizeof m.tmp.k, sizeof m.tmp.v))
-#define tds_Map_Get(m, k)               (m.tmp.key = k, tds_Map__Del((char *)m.data, m.tmp.k, sizeof m.tmp.k, sizeof m.tmp.v))
-
-#define tds_Map_Foreach(x, m, ...)\
+#define tds_map_put(m, k, v)\
         do {\
-                for (int tds__Join(_i, __LINE__) = 0; tds__Join(_i, __LINE__) < tds_Map_Capacity(m); tds__Join(_i, __LINE__)++) {\
-                        if (m[tds__Join(_i, __LINE__)].active) {\
-                                x = m[tds__Join(_i, __LINE__)].val;\
+                m.tmp.key = k;\
+                m.tmp.val = v;\
+                size_t _i = tds_map__hash((void *)&m.tmp.key, sizeof k, tds_map_cap(m));\
+                while (m.data[_i].active && memcmp(&m.tmp.key, &m.data[_i].key, sizeof k)) {\
+                        _i = (_i + 1) % tds_map_cap(m);\
+                }\
+                memcpy(&m.data[_i], &m.tmp, sizeof m.tmp);\
+        } while (0)
+
+#define tds_map_del(m, k)\
+        do {\
+                m.tmp.key = k;\
+                m.tmp.val = v;\
+                size_t _i = tds_map__hash((void *)&m.tmp.key, sizeof k, tds_map_cap(m));\
+                while (memcmp(&m.tmp.key, &m.data[_i].key, sizeof k)) {\
+                        _i = (_i + 1) % tds_map_cap(m);\
+                }\
+                m.data[_i].active = 0;\
+        } while (0)
+
+#define tds_map_get(m, k)\
+        (m.tmp.key = k, tds_map__get((char *)m.data, m.tmp.key, sizeof m.tmp.key, sizeof m.tmp.val))
+
+#define tds_map_foreach(x, m, ...)\
+        do {\
+                for (int tds__var(_i) = 0; tds__var(_i) < tds_map_cap(m); tds__var(_i)++) {\
+                        if (m[tds__var(_i)].active) {\
+                                x = m[tds__var(_i)].val;\
                                 __VA_ARGS__\
                         }\
                 }\
         } while (0)
 
-/*
-
-size_t i = tds_Map__Hash(&m.tmp.k, sizeof m.tmp.k, tds_Array_Capacity(m.data));
-while (m.data.active) {
-        
-}j
-
-m.data[i].key = k;
-m.data[i].val = v;
-m.data[i].active = 1
-
-*/
-
-// ---- Private ----------------
-
-size_t  tds_Map__Hash                   (void const *key, size_t keySize, size_t shift);
-size_t  tds_Map__Put                    (char *data, void const *key, size_t keySize, void const *val, size_t valSize);
-void    tds_Map__Del                    (char *data, void const *key, size_t keySize, size_t valSize);
-void   *tds_Map__Get                    (char *data, void const *key, size_t keySize, size_t valSize);
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -127,45 +117,34 @@ void   *tds_Map__Get                    (char *data, void const *key, size_t key
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef tds_IMPLEMENTATION
+#ifdef TDS_IMPLEMENTATION
 #ifndef __tiny_ds_c__
 #define __tiny_ds_c__
 
 #include <stdlib.h> // realloc
 #include <stdint.h> // uint64_t
 
-size_t tds__NextPow2(size_t x) {
-        x--;
-        x |= x >>  1;
-        x |= x >>  2;
-        x |= x >>  4;
-        x |= x >>  8;
-        x |= x >> 16;
-        x++;
-        return x;
-}
-
-int tds_Array__Realloc(tds__Header **a, size_t n, size_t sz) {
-        size_t size = n && sz ? n * sz + sizeof(tds__Header);
-        tds__Header *ptr = realloc(a ? tds__GetHeader(a) : NULL, size);
+int tds_array__realloc(size_t **(a), size_t n, size_t sz) {
+        size_t size = n && sz ? n * sz + sizeof(size_t) * 2;
+        size_t *ptr = realloc(*(a), size);
         if (ptr) {
-                ptr->capacity = size;
-                ptr->length   = a ? (*a)->length : 0;
+                *ptr++ = size;
+                *ptr++ = tds_array_len(*a);
                 *a = ptr;
                 return 1;
         }
         return 0;
 }
 
-size_t tds_Map__Hash(void const *key, size_t len, size_t shift) {
+size_t tds_map__hash(void const *key, size_t len, size_t shift)
         uint64_t hash = 14695981039346656037UL;
-        for (char const *p = key; len; len--) {
-                hash ^= (uint64_t)(unsigned char)(*p);
+        for (unsigned char const *p = (unsigned char const *)key; len; len--) {
+                hash ^= (uint64_t)(*p);
                 hash *= 1099511628211UL;
         }
         return hash * 11400714819323198485ULL >> shift;
 }
 
 #endif // !__tiny_ds_c__
-#endif // tds_IMPLEMENTATION
+#endif // TDS_IMPLEMENTATION
 #endif // !__tiny_ds_h__

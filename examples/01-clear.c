@@ -1,48 +1,44 @@
-#define tapp_IMPLEMENTATION
-#define tgfx_IMPLEMENTATION
+#define TAPP_IMPLEMENTATION
+#define TGFX_IMPLEMENTATION
 #include "../tiny_app.h"
 #include "../tiny_gfx.h"
 
-tgfx_Buffer    *cmd;
-tgfx_PassDesc  pass;
+tgfx_buffer    *cbo;
+tgfx_pass_desc  pass;
 
-void Init(void) {
-        cmd = tgfx_CreateBuffer(&(tgfx_BufferDesc){
-                .type = tgfx_BufferType_Command,
+void init(void) {
+        cbo = tgfx_buffer_create(&(tgfx_buffer_desc){
+                .type = TGFX_BUFFER_TYPE_COMMAND,
         });
 
-        pass = (tgfx_PassDesc) {
-                .colors[0] = { .action = tgfx_PassAction_Clear, .value = { 1.0f, 0.0f, 0.0f, 1.0f }}
+        pass = (tgfx_pass_desc) {
+                .colors[0] = { .action = TGFX_PASS_ACTION_CLEAR, .value = { 1.0f, 0.0f, 0.0f, 1.0f }}
         };
 }
 
-bool Event(tapp_Event event){
-        if (event.type == tapp_EventType_KeyRelease && event.key.sym == tapp_Key_Escape) {
-                return false;
-        }
-
-        return true;
+bool event(tapp_event event){
+        return !(event.type == TAPP_EVENT_KEYUP && event.key.sym == TAPP_KEY_ESCAPE);
 }
 
-void Update(float dt) {
+void update(float dt) {
         float g = pass.colors[0].value.g + 0.01f;
         pass.colors[0].value.g = g > 1.0f ? 0.0f : g;
 
-        tgfx_BeginPass(cmd, &pass);
-        tgfx_EndPass(cmd);
-        tgfx_SubmitCommands(cmd);
+        tgfx_begin_pass(cbo, &pass);
+        tgfx_end_pass(cbo);
+        tgfx_submit(cbo);
 }
 
-void Quit(void) {
-        tgfx_DeleteBuffer(cmd);
+void quit(void) {
+        tgfx_buffer_delete(cbo);
 }
 
-tapp_AppDesc tapp_Main(int argc, char **argv) {
-        return (tapp_AppDesc){
+tapp_desc tapp_main(int argc, char **argv) {
+        return (tapp_desc){
                 .window.title = "tapp | Clear",
-                .onInit       = Init,
-                .onEvent      = Event,
-                .onUpdate     = Update,
-                .onQuit       = Quit
+                .on_init      = init,
+                .on_event     = event,
+                .on_update    = update,
+                .on_quit      = quit
         };
 }

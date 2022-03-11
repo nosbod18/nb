@@ -1,16 +1,16 @@
-#define tapp_IMPLEMENTATION
-#define tgfx_IMPLEMENTATION
+#define TAPP_IMPLEMENTATION
+#define TGFX_IMPLEMENTATION
 #include "../tiny_app.h"
 #include "../tiny_gfx.h"
 
-tgfx_Buffer   *cmd = NULL;
-tgfx_Buffer   *vbo = NULL;
-tgfx_Program  *prg = NULL;
-tgfx_Pipeline *pip = NULL;
+tgfx_buffer   *cbo = NULL;
+tgfx_buffer   *vbo = NULL;
+tgfx_program  *prg = NULL;
+tgfx_pipeline *pip = NULL;
 
-void Init(void) {
-        cmd = tgfx_CreateBuffer(&(tgfx_BufferDesc){
-                .type = tgfx_BufferType_Command
+void init(void) {
+        cbo = tgfx_buffer_create(&(tgfx_buffer_desc){
+                .type = TGFX_BUFFER_TYPE_COMMAND
         });
 
         float const vertices[] = {
@@ -19,12 +19,12 @@ void Init(void) {
                 -0.5f, -0.5f,  0.0f, 0.0f, 1.0f, 1.0f,
         };
 
-        vbo = tgfx_CreateBuffer(&(tgfx_BufferDesc){
+        vbo = tgfx_buffer_create(&(tgfx_buffer_desc){
                 .data = vertices,
                 .size = sizeof vertices,
         });
 
-        prg = tgfx_CreateProgram(&(tgfx_ProgramDesc){
+        prg = tgfx_program_create(&(tgfx_program_desc){
                 .vs.source =
                         "#version 330 core\n"
                         "layout(location = 0) in vec2 aPosition;\n"
@@ -43,43 +43,40 @@ void Init(void) {
                         "}\n",
         });
 
-        pip = tgfx_CreatePipeline(&(tgfx_PipelineDesc){
+        pip = tgfx_pipeline_create(&(tgfx_pipeline_desc){
                 .layout.attributes = {
-                        [0] = { .type = tgfx_VertexType_Float, .count = 2 },
-                        [1] = { .type = tgfx_VertexType_Float, .count = 4 },
+                        [0] = { .type = TGFX_VERTEX_TYPE_FLOAT, .count = 2 },
+                        [1] = { .type = TGFX_VERTEX_TYPE_FLOAT, .count = 4 },
                 },
                 .program = prg,
         });
 }
 
-bool Event(tapp_Event event) {
-        if (event.type == tapp_EventType_KeyRelease && event.key.sym == tapp_Key_Escape) {
-                return false;
-        }
-        return true;
+bool event(tapp_event event) {
+        return !(event.type == TAPP_EVENT_KEYUP && event.key.sym == TAPP_KEY_ESCAPE);
 }
 
-void Update(float dt) {
-        tgfx_BeginPass(cmd, &(tgfx_PassDesc){0});
-                tgfx_BindBuffer(cmd, vbo);
-                tgfx_BindPipeline(cmd, pip);
-                tgfx_Draw(cmd, 3, 0);
-        tgfx_EndPass(cmd);
-        tgfx_SubmitCommands(cmd);
+void update(float dt) {
+        tgfx_begin_pass(cbo, &(tgfx_pass_desc){0});
+                tgfx_buffer_bind(cbo, vbo);
+                tgfx_pipeline_bind(cbo, pip);
+                tgfx_draw(cbo, 3, 0);
+        tgfx_end_pass(cbo);
+        tgfx_submit(cbo);
 }
 
-void Quit(void) {
-        tgfx_DeleteBuffer(cmd);
-        tgfx_DeleteBuffer(vbo);
-        tgfx_DeleteProgram(prg);
-        tgfx_DeletePipeline(pip);
+void quit(void) {
+        tgfx_buffer_delete(cbo);
+        tgfx_buffer_delete(vbo);
+        tgfx_program_delete(prg);
+        tgfx_pipeline_delete(pip);
 }
 
-tapp_AppDesc tapp_Main(int argc, char **argv) {
-        return (tapp_AppDesc){
+tapp_desc tapp_main(int argc, char **argv) {
+        return (tapp_desc){
                 .window.title   = "tapp | Triangle",
-                .onInit         = Init,
-                .onUpdate       = Update,
-                .onQuit         = Quit
+                .on_init        = init_,
+                .on_update      = update,
+                .on_quit        = quit
         };
 }

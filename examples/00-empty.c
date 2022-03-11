@@ -1,6 +1,6 @@
-#define tapp_IMPLEMENTATION
+#define TAPP_IMPLEMENTATION
 #include "../tiny_app.h"
 
-tapp_AppDesc tapp_Main(int argc, char **argv) {
-        return (tapp_AppDesc){0};
+tapp_desc tapp_main(int argc, char **argv) {
+        return (tapp_desc){0};
 }

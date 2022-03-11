@@ -1,20 +1,18 @@
-#define tapp_IMPLEMENTATION
-#define tgfx_IMPLEMENTATION
-#define tm_IMPLEMENTATION
+#define TINY_IMPLEMENTATION
 #include "../tiny_app.h"
 #include "../tiny_gfx.h"
 #include "../tiny_math.h"
 
-tgfx_Buffer    *cmd = NULL;
-tgfx_Buffer    *vbo = NULL;
-tgfx_Buffer    *ibo = NULL;
-tgfx_Program   *prg = NULL;
-tgfx_Pipeline  *pip = NULL;
-tm_Vector2      rot = {0};
+tgfx_buffer   *cbo;
+tgfx_buffer   *vbo;
+tgfx_buffer   *ibo;
+tgfx_program  *prg;
+tgfx_pipeline *pip;
+tm_vec2        rot;
 
-void Init(void) {
-        cmd = tgfx_CreateBuffer(&(tgfx_BufferDesc){
-                .type = tgfx_BufferType_Command
+void init(void) {
+        cbo = tgfx_buffer_create(&(tgfx_buffer_desc){
+                .type = TGFX_BUFFER_TYPE_COMMAND,
         });
 
         float const vertices[] = {
@@ -44,7 +42,7 @@ void Init(void) {
                  1.0f,  1.0f, -1.0f,   1.0f, 0.0f, 0.5f, 1.0f
         };
 
-        vbo = tgfx_CreateBuffer(&(tgfx_BufferDesc){
+        vbo = tgfx_buffer_create(&(tgfx_buffer_desc){
                 .data = vertices,
                 .size = sizeof vertices
         });
@@ -58,13 +56,13 @@ void Init(void) {
                 20, 21, 22,  22, 23, 20  // Top
         };
 
-        ibo = tgfx_CreateBuffer(&(tgfx_BufferDesc){
+        ibo = tgfx_buffer_create(&(tgfx_buffer_desc){
                 .data = indices,
                 .size = sizeof indices,
-                .type = tgfx_BufferType_Index
+                .type = TGFX_BUFFER_TYPE_INDEX,
         });
 
-        prg = tgfx_CreateProgram(&(tgfx_ProgramDesc){
+        prg = tgfx_program_create(&(tgfx_program_desc){
                 .vs.source =
                         "#version 330 core\n"
                         "layout(location = 0) in vec2 aPosition;\n"
@@ -83,62 +81,56 @@ void Init(void) {
                         "}\n",
         });
 
-        pip = tgfx_CreatePipeline(&(tgfx_PipelineDesc){
+        pip = tgfx_pipeline_create(&(tgfx_pipeline_desc){
                 .layout.attributes = {
-                        [0] = { .type = tgfx_VertexType_Float, .count = 2 },
-                        [1] = { .type = tgfx_VertexType_Float, .count = 4 },
+                        [0] = { .type = TGFX_VERTEX_TYPE_FLOAT, .count = 2 },
+                        [1] = { .type = TGFX_VERTEX_TYPE_FLOAT, .count = 4 },
                 },
                 .program = prg,
         });
 }
 
-bool Event(tapp_Event event) {
-        if (event.type == tapp_EventType_KeyRelease && event.key.sym == tapp_Key_Escape) {
-                return false;
-        }
-
-        return true;
+bool event(tapp_event event) {
+        return !(event.type == TAPP_EVENT_KEYUP && event.key.sym == TAPP_KEY_ESCAPE);
 }
 
-void Update(float dt) {
-        tm_Matrix proj     = tm_Perspective(60.0f, tapp_GetAspectRatio(), 0.01f, 10.0f);
-        tm_Matrix view     = tm_LookAt((tm_Vector3){0.0f, 1.5f, 6.0f}, (tm_Vector3){0}, (tm_Vector3){0.0f, 1.0f, 0.0f});
-        tm_Matrix viewProj = tm_MulMatrix(proj, view);
-
+void update(float dt) {
         rot.x += 1.0f * dt;
         rot.y += 2.0f * dt;
 
-        tm_Matrix rxm   = tm_Rotate((tm_Vector3){1.0f, 0.0f, 0.0f}, rot.x);
-        tm_Matrix rym   = tm_Rotate((tm_Vector3){0.0f, 1.0f, 0.0f}, rot.y);
-        tm_Matrix model = tm_MulMatrix(rxm, rym);
-        tm_Matrix mvp   = tm_MulMatrix(viewProj, model);
+        tm_mat4 rxm   = tm_rotate((tm_vec3){1.0f, 0.0f, 0.0f}, rot.x);
+        tm_mat4 rym   = tm_rotate((tm_vec3){0.0f, 1.0f, 0.0f}, rot.y);
+        tm_mat4 proj  = tm_perspective(60.0f, tapp_aspect_ratio(), 0.01f, 10.0f);
+        tm_mat4 view  = tm_lookat((tm_vec3){0.0f, 1.5f, 6.0f}, (tm_vec3){0}, (tm_vec3){0.0f, 1.0f, 0.0f});
+        tm_mat4 m     = tm_mat4_mul(rxm, rym);
+        tm_mat4 vp    = tm_mat4_mul(proj, view);
+        tm_mat4 mvp   = tm_mat4_mul(vp, m);
 
-        tgfx_BeginPass(cmd, &(tgfx_PassDesc){0});
-                tgfx_UpdateProgram(prg, 0, &mvp);
-                tgfx_BindBuffer(cmd, vbo);
-                tgfx_BindBuffer(cmd, ibo);
-                tgfx_BindPipeline(cmd, pip);
-                tgfx_Draw(cmd, 3, 0);
-        tgfx_EndPass(cmd);
+        tgfx_begin_pass(cbo, &(tgfx_PassDesc){0});
+                tgfx_program_update(prg, 0, &mvp);
+                tgfx_buffer_bind(cbo, vbo);
+                tgfx_buffer_bind(cbo, ibo);
+                tgfx_pipeline_bind(cbo, pip);
+                tgfx_draw(cbo, 3, 0);
+        tgfx_end_pass(cbo);
 
-        tgfx_SubmitCommands(cmd);
+        tgfx_submit(cbo);
 }
 
-void Quit(void) {
-        tgfx_DeleteBuffer(cmd);
-        tgfx_DeleteBuffer(vbo);
-        tgfx_DeleteBuffer(ibo);
-        tgfx_DeleteProgram(prg);
-        tgfx_DeletePipeline(pip);
+void quit(void) {
+        tgfx_buffer_delete(cbo);
+        tgfx_buffer_delete(vbo);
+        tgfx_buffer_delete(ibo);
+        tgfx_program_delete(prg);
+        tgfx_pipeline_delete(pip);
 }
 
-
-tapp_AppDesc tapp_Main(int argc, char **argv) {
-        return (tapp_AppDesc){
-                .window.title   = "Hello Triangle",
-                .onInit         = Init,
-                .onEvent        = Event,
-                .onUpdate       = Update,
-                .onQuit         = Quit
+tapp_desc tapp_main(int argc, char **argv) {
+        return (tapp_desc){
+                .window.title   = "tapp | Cube",
+                .on_init        = init,
+                .on_event       = event,
+                .on_update      = update,
+                .on_quit        = quit
         };
 }
