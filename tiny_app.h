@@ -154,32 +154,30 @@ typedef enum tapp_mod {
 } tapp_mod;
 
 typedef enum tapp_event_type {
-        TAPP_NONE = 0,
-        TAPP_KEYUP,
-        TAPP_KEYDOWN,
-        TAPP_MOUSEBUTTONDOWN,
-        TAPP_MOUSEBUTTONUP,
-        TAPP_MOUSEENTER,
-        TAPP_MOUSELEAVE,
-        TAPP_MOUSEMOTION,
-        TAPP_MOUSESCROLL,
-        TAPP_WINDOWVISIBLE,
-        TAPP_WINDOWRESIZE,
-        TAPP_WINDOWFOCUS,
-        TAPP_QUITREQUEST,
-        TAPP_LAST
+        TAPP_EVENTTYPE_NONE = 0,
+        TAPP_EVENTTYPE_KEY,
+        TAPP_EVENTTYPE_MOUSE_BUTTON,
+        TAPP_EVENTTYPE_MOUSE_ENTER,
+        TAPP_EVENTTYPE_MOUSE_LEAVE,
+        TAPP_EVENTTYPE_MOUSE_MOTION,
+        TAPP_EVENTTYPE_MOUSE_SCROLL,
+        TAPP_EVENTTYPE_VISIBLE,
+        TAPP_EVENTTYPE_RESIZE,
+        TAPP_EVENTTYPE_FOCUS,
+        TAPP_EVENTTYPE_QUIT,
+        TAPP_EVENTTYPE_LAST
 } tapp_event_type;
 
 typedef struct tapp_event {
         tapp_event_type type;
         union {
-                struct { int dummy;             } nop;
-                struct { bool focused;          } focus;
-                struct { int width, height;     } resize;
-                struct { int sym, mods;         } key;
-                struct { int x, y, button, mods;} mouse;
-                struct { int x, y, buttons;     } motion;
-                struct { double x, y;           } scroll;
+                struct { int dummy;                       } none;
+                struct { bool focused;                    } focus;
+                struct { int width, height;               } resize;
+                struct { int sym, mods, pressed;          } key;
+                struct { int x, y, buttons, mods, pressed;} mouse;
+                struct { int x, y, buttons;               } motion;
+                struct { double x, y;                     } scroll;
         };
 } tapp_event;
 
