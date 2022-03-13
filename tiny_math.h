@@ -1,472 +1,273 @@
 #ifndef __tiny_math_h__
 #define __tiny_math_h__
 
-// ======== Types ==============================================
-
-typedef struct tm_vec2 {
-        float x, y;
-} tm_vec2;
-
-typedef struct tm_vec3 {
-        float x, y, z;
-} tm_vec3;
-
-typedef struct tm_vec4 {
-        float x, y, z, w;
-} tm_vec4;
-
-typedef struct tm_mat4 {
-        float m00, m01, m02, m03;
-        float m10, m11, m12, m13;
-        float m20, m21, m22, m23;
-        float m30, m31, m32, m33;
-} tm_mat4;
-
-// ======== General ============================================
-
-#define tm_min(x, y)                            ((x) < (y) ? (x) : (y))
-#define tm_max(x, y)                            ((x) > (y) ? (x) : (y))
-#define tm_clamp(x, min, max)                   (tm_max(tm_min(x, max), min))
-#define tm_abs(x)                               ((x) < 0 ? -(x) : (x))
-#define tm_deg2rad(x)                           ((x) * 0.017453294f)
-#define tm_rad2deg(x)                           ((x) * 57.29577951f)
-
-// ======== vec =============================================
-
-#define TM_VECTOR_DEFINE(n)\
-tm_vec##n       tm_vec##n##_add                 (tm_vec##n a, tm_vec##n b);\
-tm_vec##n       tm_vec##n##_sub                 (tm_vec##n a, tm_vec##n b);\
-tm_vec##n       tm_vec##n##_mul                 (tm_vec##n a, tm_vec##n b);\
-tm_vec##n       tm_vec##n##_div                 (tm_vec##n a, tm_vec##n b);\
-tm_vec##n       tm_vec##n##_addf                (tm_vec##n a, float b);\
-tm_vec##n       tm_vec##n##_subf                (tm_vec##n a, float b);\
-tm_vec##n       tm_vec##n##_mulf                (tm_vec##n a, float b);\
-tm_vec##n       tm_vec##n##_divf                (tm_vec##n a, float b);\
-tm_vec##n       tm_vec##n##_min                 (tm_vec##n a, tm_vec##n b);\
-tm_vec##n       tm_vec##n##_max                 (tm_vec##n a, tm_vec##n b);\
-tm_vec##n       tm_vec##n##_norm                (tm_vec##n a);\
-float           tm_vec##n##_dot                 (tm_vec##n a, tm_vec##n b);\
-float           tm_vec##n##_mag                 (tm_vec##n a);\
-float           tm_vec##n##_mag2                (tm_vec##n a);\
-float           tm_vec##n##_min_component       (tm_vec##n a);\
-float           tm_vec##n##_max_component       (tm_vec##n a);
-
-TM_VECTOR_DEFINE(2)
-TM_VECTOR_DEFINE(3)
-TM_VECTOR_DEFINE(4)
-
-tm_vec3         tm_vec3_cross                   (tm_vec3 a, tm_vec3 b);
-
-// ======== mat4 ==============================================
-
-tm_mat4         tm_mat4_identity                (void);
-tm_mat4         tm_mat4_add                     (tm_mat4 a, tm_mat4 b);
-tm_mat4         tm_mat4_sub                     (tm_mat4 a, tm_mat4 b);
-tm_mat4         tm_mat4_mul                     (tm_mat4 a, tm_mat4 b);
-tm_mat4         tm_mat4_div                     (tm_mat4 a, tm_mat4 b);
-tm_mat4         tm_mat4_addf                    (tm_mat4 a, float b);
-tm_mat4         tm_mat4_subf                    (tm_mat4 a, float b);
-tm_mat4         tm_mat4_mulf                    (tm_mat4 a, float b);
-tm_mat4         tm_mat4_divf                    (tm_mat4 a, float b);
-
-// ======== Affine / Projection ================================
-
-tm_mat4         tm_translate                    (tm_vec3 translation);
-tm_mat4         tm_rotate                       (tm_vec3 axis, float degrees);
-tm_mat4         tm_scale                        (tm_vec3 scale);
-tm_mat4         tm_lookat                       (tm_vec3 eye, tm_vec3 target, tm_vec3 up);
-tm_mat4         tm_perspective                  (float fov_degrees, float aspect, float near, float far);
-tm_mat4         tm_orthographic                 (float left, float right, float bottom, float top, float near, float far);
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////                                                                                                                                                    ////
-////                                                                                                                                                    ////
-////                                                                   Implementation                                                                   ////
-////                                                                                                                                                    ////
-////                                                                                                                                                    ////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-#if defined(tm_IMPLEMENTATION) || defined(TINY_IMPLEMENTATION)
-#ifndef __tiny_math_c__
-#define __tiny_math_c__
-
-#include <math.h> // sqrtf, sinf, cosf, tanf
-
-// ======== vec2 ============================================
-
-tm_vec2 tm_vec2_add(tm_vec2 a, tm_vec2 b) {
-        return (tm_vec2){ a.x + b.x, a.y + b.y };
-}
-
-tm_vec2 tm_vec2_sub(tm_vec2 a, tm_vec2 b) {
-        return (tm_vec2){ a.x - b.x, a.y - b.y };
-}
-
-tm_vec2 tm_vec2_mul(tm_vec2 a, tm_vec2 b) {
-        return (tm_vec2){ a.x * b.x, a.y * b.y };
-}
-
-tm_vec2 tm_vec2_div(tm_vec2 a, tm_vec2 b) {
-        return (tm_vec2){ a.x / b.x, a.y / b.y };
-}
-
-tm_vec2 tm_vec2_addf(tm_vec2 a, float b) {
-        return (tm_vec2){ a.x + b, a.y + b };
-}
-
-tm_vec2 tm_vec2_subf(tm_vec2 a, float b) {
-        return (tm_vec2){ a.x - b, a.y - b };
-}
-
-tm_vec2 tm_vec2_mulf(tm_vec2 a, float b) {
-        return (tm_vec2){ a.x * b, a.y * b };
-}
-
-tm_vec2 tm_vec2_divf(tm_vec2 a, float b) {
-        return (tm_vec2){ a.x / b, a.y / b };
-}
-
-tm_vec2 tm_vec2min(tm_vec2 a, tm_vec2 b) {
-        return (tm_vec2){ tm_min(a.x, b.x), tm_min(a.y, b.y) };
-}
-
-tm_vec2 tm_vec2max(tm_vec2 a, tm_vec2 b) {
-        return (tm_vec2){ tm_max(a.x, b.x), tm_max(a.y, b.y) };
-}
-
-tm_vec2 tm_vec2_norm(tm_vec2 a) {
-        return tm_vec2_divf(a, tm_vec2_mag(a));
-}
-
-float tm_vec2_dot(tm_vec2 a, tm_vec2 b) {
-        return a.x * b.x + a.y * b.y;
-}
-
-float tm_vec2_mag(tm_vec2 a) {
-        return sqrtf(tm_vec2_mag2(a));
-}
-
-float tm_vec2_mag2(tm_vec2 a) {
-        return tm_vec2_dot(a, a);
-}
-
-float tm_vec2_min_component(tm_vec2 a) {
-        return tm_min(a.x, a.y);
-}
-
-float tm_vec2_max_component(tm_vec2 a) {
-        return tm_max(a.x, a.y);
-}
-
-// ======== vec3 ============================================
-
-tm_vec3 tm_vec3_add(tm_vec3 a, tm_vec3 b) {
-        return (tm_vec3){ a.x + b.x, a.y + b.y, a.z + b.z };
-}
-
-tm_vec3 tm_vec3_sub(tm_vec3 a, tm_vec3 b) {
-        return (tm_vec3){ a.x - b.x, a.y - b.y, a.z - b.z };
-}
-
-tm_vec3 tm_vec3_mul(tm_vec3 a, tm_vec3 b) {
-        return (tm_vec3){ a.x * b.x, a.y * b.y, a.z * b.z };
-}
-
-tm_vec3 tm_vec3_div(tm_vec3 a, tm_vec3 b) {
-        return (tm_vec3){ a.x / b.x, a.y / b.y, a.z / b.z };
-}
-
-tm_vec3 tm_vec3_addf(tm_vec3 a, float b) {
-        return (tm_vec3){ a.x + b, a.y + b, a.z + b };
-}
-
-tm_vec3 tm_vec3_subf(tm_vec3 a, float b) {
-        return (tm_vec3){ a.x - b, a.y - b, a.z - b };
-}
-
-tm_vec3 tm_vec3_mulf(tm_vec3 a, float b) {
-        return (tm_vec3){ a.x * b, a.y * b, a.z * b };
-}
-
-tm_vec3 tm_vec3_divf(tm_vec3 a, float b) {
-        return (tm_vec3){ a.x / b, a.y / b, a.z / b };
-}
-
-tm_vec3 tm_vec3min(tm_vec3 a, tm_vec3 b) {
-        return (tm_vec3){ tm_min(a.x, b.x), tm_min(a.y, b.y), tm_min(a.z, b.z) };
-}
-
-tm_vec3 tm_vec3max(tm_vec3 a, tm_vec3 b) {
-        return (tm_vec3){ tm_max(a.x, b.x), tm_max(a.y, b.y), tm_max(a.z, b.z) };
-}
-
-tm_vec3 tm_vec3_norm(tm_vec3 a) {
-        return tm_vec3_divf(a, tm_vec3_mag(a));
-}
-
-float tm_vec3_dot(tm_vec3 a, tm_vec3 b) {
-        return a.x * b.x + a.y * b.y + a.z * b.z;
-}
-
-float tm_vec3_mag(tm_vec3 a) {
-        return sqrtf(tm_vec3_mag2(a));
-}
-
-float tm_vec3_mag2(tm_vec3 a) {
-        return tm_vec3_dot(a, a);
-}
-
-float tm_vec3_min_component(tm_vec3 a) {
-        return tm_min(tm_min(a.x, a.y), a.z);
-}
-
-float tm_vec3_max_component(tm_vec3 a) {
-        return tm_max(tm_max(a.x, a.y), a.z);
-}
-
-tm_vec3 tm_vec3_cross(tm_vec3 a, tm_vec3 b) {
-        return (tm_vec3){
-                a.y * b.x - a.z * b.y,
-                a.z * b.x - a.x * b.z,
-                a.x * b.y - a.y * b.x
-        };
-}
-
-// ======== vec4 ============================================
-
-tm_vec4 tm_vec4_add(tm_vec4 a, tm_vec4 b) {
-        return (tm_vec4){ a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w };
-}
-
-tm_vec4 tm_vec4_sub(tm_vec4 a, tm_vec4 b) {
-        return (tm_vec4){ a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w };
-}
-
-tm_vec4 tm_vec4_mul(tm_vec4 a, tm_vec4 b) {
-        return (tm_vec4){ a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w };
-}
-
-tm_vec4 tm_vec4_div(tm_vec4 a, tm_vec4 b) {
-        return (tm_vec4){ a.x / b.x, a.y / b.y, a.z / b.z, a.w / b.w };
-}
-
-tm_vec4 tm_vec4_addf(tm_vec4 a, float b) {
-        return (tm_vec4){ a.x + b, a.y + b, a.z + b, a.w + b };
-}
-
-tm_vec4 tm_vec4_subf(tm_vec4 a, float b) {
-        return (tm_vec4){ a.x - b, a.y - b, a.z - b, a.w - b };
-}
-
-tm_vec4 tm_vec4_mulf(tm_vec4 a, float b) {
-        return (tm_vec4){ a.x * b, a.y * b, a.z * b, a.w * b };
-}
-
-tm_vec4 tm_vec4_divf(tm_vec4 a, float b) {
-        return (tm_vec4){ a.x / b, a.y / b, a.z / b, a.w / b };
-}
-
-tm_vec4 tm_vec4_min(tm_vec4 a, tm_vec4 b) {
-        return (tm_vec4){ tm_min(a.x, b.x), tm_min(a.y, b.y), tm_min(a.z, b.z), tm_min(a.w, b.w) };
-}
-
-tm_vec4 tm_vec4_max(tm_vec4 a, tm_vec4 b) {
-        return (tm_vec4){ tm_max(a.x, b.x), tm_max(a.y, b.y), tm_max(a.z, b.z), tm_max(a.w, b.w) };
-}
-
-tm_vec4 tm_vec4_norm(tm_vec4 a) {
-        return tm_vec4_divf(a, tm_vec4_mag(a));
-}
-
-float tm_vec4_dot(tm_vec4 a, tm_vec4 b) {
-        return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
-}
-
-float tm_vec4_mag(tm_vec4 a) {
-        return sqrtf(tm_vec4_mag2(a));
-}
-
-float tm_vec4_mag2(tm_vec4 a) {
-        return tm_vec4_dot(a, a);
-}
-
-float tm_vec4_min_component(tm_vec4 a) {
-        return tm_min(tm_min(a.x, a.y), tm_min(a.z, a.w));
-}
-
-float tm_vec4_max_component(tm_vec4 a) {
-        return tm_max(tm_max(a.x, a.y), tm_max(a.z, a.w));
-}
-
-// ======== mat4 =============================================
-
-tm_mat4 tm_mat4_identity(void) {
-        return (tm_mat4){ .m00 = 1.0f, .m11 = 1.0f, .m22 = 1.0f, .m33 = 1.0f };
-}
-
-tm_mat4 tm_mat4_add(tm_mat4 a, tm_mat4 b) {
-        return (tm_mat4){
-                a.m00 + b.m00, a.m01 + b.m01, a.m02 + b.m02, a.m03 + b.m03,
-                a.m10 + b.m10, a.m11 + b.m11, a.m12 + b.m12, a.m13 + b.m13,
-                a.m20 + b.m20, a.m21 + b.m21, a.m22 + b.m22, a.m23 + b.m23,
-                a.m30 + b.m30, a.m31 + b.m31, a.m32 + b.m32, a.m33 + b.m33,
-        };
-}
-
-tm_mat4 tm_mat4_sub(tm_mat4 a, tm_mat4 b) {
-        return (tm_mat4){
-                a.m00 - b.m00, a.m01 - b.m01, a.m02 - b.m02, a.m03 - b.m03,
-                a.m10 - b.m10, a.m11 - b.m11, a.m12 - b.m12, a.m13 - b.m13,
-                a.m20 - b.m20, a.m21 - b.m21, a.m22 - b.m22, a.m23 - b.m23,
-                a.m30 - b.m30, a.m31 - b.m31, a.m32 - b.m32, a.m33 - b.m33,
-        };
-}
-
-tm_mat4 tm_mat4_mul(tm_mat4 a, tm_mat4 b) {
-        return (tm_mat4){
-                a.m00 * b.m00, a.m01 * b.m01, a.m02 * b.m02, a.m03 * b.m03,
-                a.m10 * b.m10, a.m11 * b.m11, a.m12 * b.m12, a.m13 * b.m13,
-                a.m20 * b.m20, a.m21 * b.m21, a.m22 * b.m22, a.m23 * b.m23,
-                a.m30 * b.m30, a.m31 * b.m31, a.m32 * b.m32, a.m33 * b.m33,
-        };
-}
-
-tm_mat4 tm_mat4_div(tm_mat4 a, tm_mat4 b) {
-        return (tm_mat4){
-                a.m00 / b.m00, a.m01 / b.m01, a.m02 / b.m02, a.m03 / b.m03,
-                a.m10 / b.m10, a.m11 / b.m11, a.m12 / b.m12, a.m13 / b.m13,
-                a.m20 / b.m20, a.m21 / b.m21, a.m22 / b.m22, a.m23 / b.m23,
-                a.m30 / b.m30, a.m31 / b.m31, a.m32 / b.m32, a.m33 / b.m33,
-        };
-}
-
-tm_mat4 tm_mat4_addf(tm_mat4 a, float b) {
-        return (tm_mat4){
-                a.m00 + b, a.m01 + b, a.m02 + b, a.m03 + b,
-                a.m10 + b, a.m11 + b, a.m12 + b, a.m13 + b,
-                a.m20 + b, a.m21 + b, a.m22 + b, a.m23 + b,
-                a.m30 + b, a.m31 + b, a.m32 + b, a.m33 + b,
-        };
-}
-
-tm_mat4 tm_mat4_subf(tm_mat4 a, float b) {
-        return (tm_mat4){
-                a.m00 - b, a.m01 - b, a.m02 - b, a.m03 - b,
-                a.m10 - b, a.m11 - b, a.m12 - b, a.m13 - b,
-                a.m20 - b, a.m21 - b, a.m22 - b, a.m23 - b,
-                a.m30 - b, a.m31 - b, a.m32 - b, a.m33 - b,
-        };
-}
-
-tm_mat4 tm_mat4_mulf(tm_mat4 a, float b) {
-        return (tm_mat4){
-                a.m00 * b, a.m01 * b, a.m02 * b, a.m03 * b,
-                a.m10 * b, a.m11 * b, a.m12 * b, a.m13 * b,
-                a.m20 * b, a.m21 * b, a.m22 * b, a.m23 * b,
-                a.m30 * b, a.m31 * b, a.m32 * b, a.m33 * b,
-        };
-}
-
-tm_mat4 tm_mat4_divf(tm_mat4 a, float b) {
-        return (tm_mat4){
-                a.m00 / b, a.m01 / b, a.m02 / b, a.m03 / b,
-                a.m10 / b, a.m11 / b, a.m12 / b, a.m13 / b,
-                a.m20 / b, a.m21 / b, a.m22 / b, a.m23 / b,
-                a.m30 / b, a.m31 / b, a.m32 / b, a.m33 / b,
-        };
-}
-
-// ======== Affine =============================================
-
-tm_mat4 tm_translate(tm_vec3 translation) {
-        return (tm_mat4){
-                .m00 = 1.0f,
-                .m11 = 1.0f,
-                .m22 = 1.0f,
-                .m30 = translation.x,
-                .m31 = translation.y,
-                .m32 = translation.z,
-                .m33 = 1.0f,
-        };
-}
-
-// http://fastgraph.com/makegames/3drotation/
-tm_mat4 tm_rotate(tm_vec3 axis, float degrees) {
-        float c = cosf(tm_deg_to_rad(degrees));
-        float s = sinf(tm_deg_to_rad(degrees));
-        float t = 1.0f - c;
-
-        tm_vec3 an = tm_vec3_norm(axis);
-        tm_vec3 at = tm_vec3_mulf(an, t);
-        tm_vec3 as = tm_vec3_mulf(an, s);
-
-        return (tm_mat4){
-                an.x * at.x + c,    an.y * at.x + as.z, an.z * at.x - as.y, 0.0f,
-                an.x * at.y - as.z, an.y * at.y + c,    an.z * at.y + as.x, 0.0f,
-                an.x * at.z + as.y, an.y * at.z + as.x, an.z * at.z + c,    0.0f,
-                0.0f,               0.0f,               0.0f,               1.0f
-        };
-}
-
-tm_mat4 tm_scale(tm_vec3 scale) {
-        return (tm_mat4){
-                .m00 = scale.x,
-                .m11 = scale.y,
-                .m22 = scale.z,
-                .m33 = 1.0f
-        };
-}
-
-tm_mat4 tm_lookat(tm_vec3 eye, tm_vec3 target, tm_vec3 up) {
-        tm_vec3 f = tm_vec3_norm(tm_vec3_sub(target, eye));
-        tm_vec3 r = tm_vec3_norm(tm_vec3_cross(f, up));
-        tm_vec3 u = tm_vec3_cross(r, f);
-
-        float rdot = -tm_vec3_dot(r, eye);
-        float udot = -tm_vec3_dot(u, eye);
-        float fdot = -tm_vec3_dot(f, eye);
-
-        return (tm_mat4){
-                 r.x,  u.x, -f.x, 0.0f,
-                 r.y,  u.y, -f.y, 0.0f,
-                 r.z,  u.z, -f.z, 0.0f,
-                rdot, udot, fdot, 1.0f
-        };
-}
-
-tm_mat4 tm_perspective(float fov_degrees, float aspect, float near, float far) {
-        float fov = 1.0f / tanf(tm_deg2rad(fov_degrees) * 0.5f);
-        float nf  = 1.0f / (near - far);
-
-        return (tm_mat4){
-                .m00 = fov / aspect,
-                .m11 = fov,
-                .m22 = (near + far) * nf,
-                .m23 = -1.0f,
-                .m32 = 2.0f * near * far * nf
-        };
-}
-
-tm_mat4 tm_orthographic(float left, float right, float bottom, float top, float near, float far) {
-        float rl =  1.0f / (right - left);
-        float tb =  1.0f / (top - bottom);
-        float fn = -1.0f / (far - near);
-
-        return (tm_mat4){
-                .m00 = 2.0f * rl,
-                .m11 = 2.0f * tb,
-                .m22 = 2.0f * fn,
-                .m30 = -(right + left) * rl,
-                .m31 = -(top + bottom) * tb,
-                .m32 = -(far + near) * fn,
-                .m33 = 1.0f
-        };
-}
-
-#endif // !__tiny_math_c__
-#endif // TM_IMPLEMENTATION || TINY_IMPLEMENTATION
-#endif // !__tiny_math_h
+#include <math.h> // sin, cos, tan, sqrt
+
+#ifndef TM_API
+        #ifdef TM_NO_INLINE
+                #define TM_API static
+        #else
+                #define TM_API static inline
+        #endif
+#endif
+
+#ifndef TM
+        #ifdef TM_NO_SHORT_NAMES
+                #define TM(x) tm_##x
+        #else
+                #define TM(x) x
+        #endif
+#endif
+
+
+#define TM_VECTOR(T, N)\
+typedef T TM(T##N[N]);\
+TM_API void TM(T##N##_add)(TM(T##N) out, TM(T##N) const a, TM(T##N) const b) {\
+        for (int _i = 0; _i < N; _i++)\
+                out[_i] = a[_i] + b[_i];\
+}\
+TM_API void TM(T##N##_sub)(TM(T##N) out, TM(T##N) const a, TM(T##N) const b) {\
+        for (int _i = 0; _i < N; _i++)\
+                out[_i] = a[_i] - b[_i];\
+}\
+TM_API void TM(T##N##_mul)(TM(T##N) out, TM(T##N) const a, TM(T##N) const b) {\
+        for (int _i = 0; _i < N; _i++)\
+                out[_i] = a[_i] * b[_i];\
+}\
+TM_API void TM(T##N##_div)(TM(T##N) out, TM(T##N) const a, TM(T##N) const b) {\
+        for (int _i = 0; _i < N; _i++)\
+                out[_i] = a[_i] / b[_i];\
+}\
+TM_API void TM(T##N##_adds)(TM(T##N) out, TM(T##N) const a, T b) {\
+        for (int _i = 0; _i < N; _i++)\
+                out[_i] = a[_i] + b;\
+}\
+TM_API void TM(T##N##_subs)(TM(T##N) out, TM(T##N) const a, T b) {\
+        for (int _i = 0; _i < N; _i++)\
+                out[_i] = a[_i] - b;\
+}\
+TM_API void TM(T##N##_muls)(TM(T##N) out, TM(T##N) const a, T b) {\
+        for (int _i = 0; _i < N; _i++)\
+                out[_i] = a[_i] * b;\
+}\
+TM_API void TM(T##N##_divs)(TM(T##N) out, TM(T##N) const a, T b) {\
+        for (int _i = 0; _i < N; _i++)\
+                out[_i] = a[_i] / b;\
+}\
+TM_API T TM(T##N##_dot)(TM(T##N) const a, TM(T##N) const b) {\
+        T dot = 0;\
+        for (int _i = 0; _i < N; _i++)\
+                dot += a[_i] * b[_i];\
+        return dot;\
+}\
+TM_API T TM(T##N##_mag2)(TM(T##N) const a) {\
+        return T##N##_dot(a, a);\
+}\
+TM_API T TM(T##N##_mag)(TM(T##N) const a) {\
+        return sqrt(T##N##_mag2(a));\
+}\
+TM_API void TM(T##N##_min)(TM(T##N) out, TM(T##N) const a, TM(T##N) const b) {\
+        for (int _i = 0; _i < N; _i++)\
+                out[_i] = a[_i] < b[_i] ? a[_i] : b[_i];\
+}\
+TM_API void TM(T##N##_max)(TM(T##N) out, TM(T##N) const a, TM(T##N) const b) {\
+        for (int _i = 0; _i < N; _i++)\
+                out[_i] = a[_i] > b[_i] ? a[_i] : b[_i];\
+}\
+TM_API void TM(T##N##_norm)(TM(T##N) out, TM(T##N) const a) {\
+        T##N##_divs(out, a, T##N##_mag(a));\
+}\
+TM_API T TM(T##N##_min_component)(TM(T##N) const a) {\
+        T min = a[0];\
+        for (int _i = 1; _i < N; _i++)\
+                min = a[_i] < min ? a[_i] : min;\
+        return min;\
+}\
+TM_API T TM(T##N##_max_component)(TM(T##N) const a) {\
+        T max = a[0];\
+        for (int _i = 1; _i < N; _i++)\
+                max = a[_i] > max ? a[_i] : max;\
+        return max;\
+}\
+
+// Dimension specific vector functions
+#define TM_VECTOR_SPECIFIC(T)\
+TM_API void TM(T##3_cross)(TM(T##3) out, TM(T##3) const a, TM(T##3) const b) {\
+        out[0] = a[1] * b[3] - a[3] * b[1];\
+        out[1] = a[2] * b[0] - a[0] * b[2];\
+        out[2] = a[0] * b[1] - a[1] * b[0];\
+}
+
+#define TM_MATRIX(T, R, C)\
+typedef T TM(T##R##x##C[R][C]);\
+TM_API void TM(T##R##x##C##_identity)(TM(T##R##x##C) out) {\
+        for (int _i = 0; _i < R; _i++)\
+                for (int _j = 0; _j < C; _j++)\
+                     out[_i][_j] = (T)(_i == _j);\
+}\
+TM_API void TM(T##R##x##C##_add)(TM(T##R##x##C) out, TM(T##R##x##C) const a, TM(T##R##x##C) const b) {\
+        for (int _i = 0; _i < R; _i++)\
+                for (int _j = 0; _j < C; _j++)\
+                     out[_i][_j] = a[_i][_j] + b[_i][_j];\
+}\
+TM_API void TM(T##R##x##C##_sub)(TM(T##R##x##C) out, TM(T##R##x##C) const a, TM(T##R##x##C) const b) {\
+        for (int _i = 0; _i < R; _i++)\
+                for (int _j = 0; _j < C; _j++)\
+                     out[_i][_j] = a[_i][_j] - b[_i][_j];\
+}\
+TM_API void TM(T##R##x##C##_mul)(TM(T##R##x##C) out, TM(T##R##x##C) const a, TM(T##R##x##C) const b) {\
+        for (int _i = 0; _i < R; _i++)\
+                for (int _j = 0; _j < C; _j++)\
+                     out[_i][_j] = a[_i][_j] * b[_i][_j];\
+}\
+TM_API void TM(T##R##x##C##_div)(TM(T##R##x##C) out, TM(T##R##x##C) const a, TM(T##R##x##C) const b) {\
+        for (int _i = 0; _i < R; _i++)\
+                for (int _j = 0; _j < C; _j++)\
+                     out[_i][_j] = a[_i][_j] / b[_i][_j];\
+}\
+TM_API void TM(T##R##x##C##_adds)(TM(T##R##x##C) out, TM(T##R##x##C) const a, T b) {\
+        for (int _i = 0; _i < R; _i++)\
+                for (int _j = 0; _j < C; _j++)\
+                     out[_i][_j] = a[_i][_j] + b;\
+}\
+TM_API void TM(T##R##x##C##_subs)(TM(T##R##x##C) out, TM(T##R##x##C) const a, T b) {\
+        for (int _i = 0; _i < R; _i++)\
+                for (int _j = 0; _j < C; _j++)\
+                     out[_i][_j] = a[_i][_j] - b;\
+}\
+TM_API void TM(T##R##x##C##_muls)(TM(T##R##x##C) out, TM(T##R##x##C) const a, T b) {\
+        for (int _i = 0; _i < R; _i++)\
+                for (int _j = 0; _j < C; _j++)\
+                     out[_i][_j] = a[_i][_j] * b;\
+}\
+TM_API void TM(T##R##x##C##_divs)(TM(T##R##x##C) out, TM(T##R##x##C) const a, T b) {\
+        for (int _i = 0; _i < R; _i++)\
+                for (int _j = 0; _j < C; _j++)\
+                     out[_i][_j] = a[_i][_j] / b;\
+}\
+
+// Dimension specific matrix functions
+#define TM_MATRIX_SPECIFIC(T)\
+TM_API void TM(T##3x3_translate)(TM(T##3x3) out, TM(T##2) const v) {\
+        TM(T##3x3_identity)(out);\
+        out[2][0] = v[0];\
+        out[2][1] = v[1];\
+}\
+TM_API void TM(T##3x3_rotate)(TM(T##3x3) out, T degrees) {\
+        T c = cos(degrees * 0.0174533);\
+        T s = sin(degrees * 0.0174533);\
+        TM(T##3x3_identity)(out);\
+        out[0][0] =  c;\
+        out[0][1] =  s;\
+        out[1][0] = -s;\
+        out[1][1] =  c;\
+        out[0][2] = out[1][2] = out[2][0] = out[2][1] = 0;\
+        out[2][2] = 1.0;\
+}\
+TM_API void TM(T##3x3_scale)(TM(T##3x3) out, TM(T##2) const v) {\
+        TM(T##3x3_identity)(out);\
+        out[0][0] = v[0];\
+        out[1][1] = v[1];\
+}\
+TM_API void TM(T##3x3_scale_uni)(TM(T##3x3) out, T s) {\
+        TM(T##3x3_identity)(out);\
+        out[0][0] = s;\
+        out[1][1] = s;\
+}\
+TM_API void TM(T##4x4_translate)(TM(T##4x4) out, TM(T##3) const v) {\
+        TM(T##4x4_identity)(out);\
+        out[3][0] = v[0];\
+        out[3][1] = v[1];\
+        out[3][2] = v[2];\
+        out[0][0] = out[1][1] = out[2][2] = out[3][3] = 1.0;\
+}\
+TM_API void TM(T##4x4_rotate)(TM(T##4x4) out, TM(T##3) const axis, T degrees) {\
+        T c = cos(degrees * 0.0174533);\
+        T s = sin(degrees * 0.0174533);\
+        T t = 1.0 - c;\
+        TM(T##3) an, at, as;\
+        TM(T##3_norm)(an, axis);\
+        TM(T##3_muls)(at, an, t);\
+        TM(T##3_muls)(as, an, s);\
+        TM(T##4x4_identity)(out);\
+        out[0][0] = an[0] * at[0] + c;\
+        out[0][1] = an[1] * at[0] + as[2];\
+        out[0][2] = an[2] * at[0] - as[1];\
+        out[1][0] = an[0] * at[1] - as[2];\
+        out[1][1] = an[1] * at[1] + c;\
+        out[1][2] = an[2] * at[1] + as[0];\
+        out[2][0] = an[0] * at[2] + as[2];\
+        out[2][1] = an[1] * at[2] + as[0];\
+        out[2][2] = an[2] * at[2] + c;\
+        out[0][3] = out[1][3] = out[2][3] = out[3][0] = out[3][1] = out[3][2] = 0;\
+        out[3][3] = 1.0;\
+}\
+TM_API void TM(T##4x4_scale)(TM(T##4x4) out, TM(T##3) const v) {\
+        TM(T##4x4_identity)(out);\
+        out[0][0] = v[0];\
+        out[1][1] = v[1];\
+        out[2][2] = v[2];\
+        out[3][3] = 1.0;\
+}\
+TM_API void TM(T##4x4_lookat)(TM(T##4x4) out, TM(T##3) const eye, TM(T##3) const target, TM(T##3) const up) {\
+        TM(T##3) f, r, u;\
+        TM(T##3_sub)(f, target, eye);\
+        TM(T##3_norm)(f, f);\
+        TM(T##3_cross)(r, f, up);\
+        TM(T##3_norm)(r, r);\
+        TM(T##3_cross)(u, r, f);\
+        out[0][0] =  r[0];\
+        out[0][1] =  u[0];\
+        out[0][2] = -f[0];\
+        out[1][0] =  r[1];\
+        out[1][1] =  u[1];\
+        out[1][2] = -f[1];\
+        out[2][0] =  r[2];\
+        out[2][1] =  u[2];\
+        out[2][2] = -f[2];\
+        out[3][1] = -TM(T##3_dot)(u, eye);\
+        out[3][0] = -TM(T##3_dot)(r, eye);\
+        out[3][2] = -TM(T##3_dot)(f, eye);\
+}\
+TM_API void TM(T##4x4_perspective)(TM(T##4x4) out, T fov_degrees, T aspect, T near, T far) {\
+        T fov = 1.0 / tan(fov_degrees * 0.0174533 * 0.5);\
+        T nf  = 1.0 / (near - far);\
+        out[0][0] = fov / aspect;\
+        out[1][1] = fov;\
+        out[2][2] = (near + far) * nf;\
+        out[2][3] = -1.0;\
+        out[3][2] = 2.0 * near * far * nf;\
+}\
+TM_API void TM(T##4x4_ortho)(TM(T##4x4) out, T left, T right, T bottom, T top, T near, T far) {\
+        T rl =  1.0 / (right - bottom);\
+        T tb =  1.0 / (top - bottom);\
+        T fn = -1.0 / (far - near);\
+        out[0][0] = 2.0 * rl;\
+        out[1][1] = 2.0 * tb;\
+        out[2][2] = 2.0 * fn;\
+        out[3][0] = -(right + left) * rl;\
+        out[3][1] = -(top + bottom) * tb;\
+        out[3][2] = -(far + near) * fn;\
+        out[3][3] = 1.0;\
+}\
+
+TM_VECTOR(int,    2)
+TM_VECTOR(int,    3)
+TM_VECTOR(int,    4)
+TM_VECTOR(float,  2)
+TM_VECTOR(float,  3)
+TM_VECTOR(float,  4)
+TM_VECTOR(double, 2)
+TM_VECTOR(double, 3)
+TM_VECTOR(double, 4)
+TM_VECTOR_SPECIFIC(float)
+TM_VECTOR_SPECIFIC(double)
+
+TM_MATRIX(float,  3, 3)
+TM_MATRIX(float,  4, 4)
+TM_MATRIX(double, 3, 3)
+TM_MATRIX(double, 4, 4)
+TM_MATRIX_SPECIFIC(float)
+TM_MATRIX_SPECIFIC(double)
+
+#endif // __tiny_math_h__
