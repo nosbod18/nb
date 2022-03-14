@@ -1,8 +1,6 @@
 #ifndef __tiny_app_h__
 #define __tiny_app_h__
 
-#include <stdbool.h>
-
 typedef enum tapp_key {
         TAPP_KEY_INVALID                = 0x00,
         TAPP_KEY_BACKSPACE              = 0x08,
@@ -128,8 +126,8 @@ typedef enum tapp_key {
         TAPP_KEY_NUM_LOCK               = 0xba,
         TAPP_KEY_CAPS_LOCK              = 0xbb,
         TAPP_KEY_SCROLL_LOCK            = 0xbc,
-        TAPP_KEY_LAST                   = 0x100
-} tapp_key;
+        TAPP_KEY_LAST                   = 0x100 // 256
+} TAPP_Key;
 
 typedef enum tapp_mouse_button {
         TAPP_MOUSE_BUTTON_1 = 0,
@@ -137,72 +135,65 @@ typedef enum tapp_mouse_button {
         TAPP_MOUSE_BUTTON_3,
         TAPP_MOUSE_BUTTON_4,
         TAPP_MOUSE_BUTTON_5,
-        tapp_mouse_button_LAST,
+        TAPP_MOUSE_BUTTON_LAST,
         TAPP_MOUSE_BUTTON_LEFT          = TAPP_MOUSE_BUTTON_1,
         TAPP_MOUSE_BUTTON_MIDDLE        = TAPP_MOUSE_BUTTON_2,
         TAPP_MOUSE_BUTTON_RIGHT         = TAPP_MOUSE_BUTTON_3,
 } tapp_mouse_button;
 
 typedef enum tapp_mod {
-        TAPP_MOD_SHIFT     = 1 << 0,
-        TAPP_MOD_CONTROL   = 1 << 1,
-        TAPP_MOD_ALT       = 1 << 2,
-        TAPP_MOD_SUPER     = 1 << 3,
-        TAPP_MOD_NUM_LOCK  = 1 << 4,
-        TAPP_MOD_CAPS_LOCK = 1 << 5,
-        TAPP_MOD_LAST,
+        TAPP_MOD_SHIFT                  = 1 << 0,
+        TAPP_MOD_CONTROL                = 1 << 1,
+        TAPP_MOD_ALT                    = 1 << 2,
+        TAPP_MOD_SUPER                  = 1 << 3,
+        TAPP_MOD_NUM_LOCK               = 1 << 4,
+        TAPP_MOD_CAPS_LOCK              = 1 << 5,
+        TAPP_MOD_LAST
 } tapp_mod;
 
 typedef enum tapp_event_type {
-        TAPP_EVENTTYPE_NONE = 0,
-        TAPP_EVENTTYPE_KEY,
-        TAPP_EVENTTYPE_MOUSE_BUTTON,
-        TAPP_EVENTTYPE_MOUSE_ENTER,
-        TAPP_EVENTTYPE_MOUSE_LEAVE,
-        TAPP_EVENTTYPE_MOUSE_MOTION,
-        TAPP_EVENTTYPE_MOUSE_SCROLL,
-        TAPP_EVENTTYPE_VISIBLE,
-        TAPP_EVENTTYPE_RESIZE,
-        TAPP_EVENTTYPE_FOCUS,
-        TAPP_EVENTTYPE_QUIT,
-        TAPP_EVENTTYPE_LAST
+        TAPP_EVENT_TYPE_NONE = 0,
+        TAPP_EVENT_TYPE_WINDOWEXPOSE,
+        TAPP_EVENT_TYPE_WINDOWRESIZE,
+        TAPP_EVENT_TYPE_WINDOWFOCUS,
+        TAPP_EVENT_TYPE_MOUSEBUTTONDOWN,
+        TAPP_EVENT_TYPE_MOUSEBUTTONUP,
+        TAPP_EVENT_TYPE_MOUSEENTER,
+        TAPP_EVENT_TYPE_MOUSELEAVE,
+        TAPP_EVENT_TYPE_MOUSEMOTION,
+        TAPP_EVENT_TYPE_MOUSESCROLL,
+        TAPP_EVENT_TYPE_KEYDOWN,
+        TAPP_EVENT_TYPE_KEYUP,
+        TAPP_EVENT_TYPE_QUIT,
+        TAPP_EVENT_TYPE_LAST
 } tapp_event_type;
 
-typedef struct tapp_event {
-        tapp_event_type type;
-        union {
-                struct { int dummy;                       } none;
-                struct { bool focused;                    } focus;
-                struct { int width, height;               } resize;
-                struct { int sym, mods, pressed;          } key;
-                struct { int x, y, buttons, mods, pressed;} mouse;
-                struct { int x, y, buttons;               } motion;
-                struct { double x, y;                     } scroll;
-        };
+typedef union tapp_event {
+        int                                               type;
+        struct { int type, visible;                     } expose;
+        struct { int type, focused;                     } focus;
+        struct { int type, width, height;               } resize;
+        struct { int type,       sym, mods, pressed;    } key;
+        struct { int type, x, y, sym, mods, pressed;    } button;
+        struct { int type, x, y, sym;                   } motion;
+        struct { int type; double x, y;                 } scroll;
 } tapp_event;
 
 typedef void (*tapp_init_callback)(void);
-typedef bool (*tapp_event_callback)(tapp_event event);
+typedef void (*tapp_event_callback)(tapp_event const *event);
 typedef void (*tapp_update_callback)(float dt);
 typedef void (*tapp_quit_callback)(void);
 
 typedef struct tapp_desc {
-        struct {
-                char const *title;
-                int  width;
-                int  height;
-                bool fullscreen;
-                bool vsync;
-        } window;
-
-        struct {
-                struct { int major, minor; } version;
-        } context;
-
-        tapp_init_callback     on_init;
-        tapp_event_callback    on_event;
-        tapp_update_callback   on_update;
-        tapp_quit_callback     on_quit;
+        char const             *title;
+        int                     width;
+        int                     height;
+        int                     fullscreen;
+        int                     vsync;
+        tapp_init_callback      on_init;
+        tapp_event_callback     on_event;
+        tapp_update_callback    on_update;
+        tapp_quit_callback      on_quit;
 } tapp_desc;
 
 
@@ -211,42 +202,88 @@ void            tapp_request_quit       (void);
 float           tapp_aspect_ratio       (void);
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////                                                                                                                                                    ////
-////                                                                                                                                                    ////
-////                                                                   Implementation                                                                   ////
-////                                                                                                                                                    ////
-////                                                                                                                                                    ////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/***********************************************************************************************************************************************************
+************************************************************************************************************************************************************
+****                                                                                                                                                    ****
+****                                                                                                                                                    ****
+****                                                                   Implementation                                                                   ****
+****                                                                                                                                                    ****
+****                                                                                                                                                    ****
+************************************************************************************************************************************************************
+***********************************************************************************************************************************************************/
 
 
-#if defined(TAPP_IMPLEMENTATION) || defined(TINY_IMPLEMENTATION)
+#if defined(TINY_APP_IMPL) || defined(TINY_IMPL)
 #ifndef __tiny_app_c__
 #define __tiny_app_c__
 
-#include <assert.h>
+#if defined(__linux__)
+        #include <xcb/xcb.h>
+#endif
 
 static struct {
-        tapp_init_callback on_init;
-        tapp_event_callback on_event;
-        tapp_update_callback on_update;
-        tapp_quit_callback on_quit;
-        bool should_quit;
-        bool will_quit;
-} TAPP = {0};
+#if defined(__linux__)
+        struct {
+                xcb_connection_t        *con;
+                xcb_screen_t            *screen;
+                xcb_window_t             win;
+                xcb_intern_atom_reply_t *wm_del_win;
+        } xcb;
+#endif // __linux__
+
+        tapp_desc desc;
+        int should_quit;
+} _tapp = {0};
 
 
-//==============================================================
-// General
+void tapp_request_quit(void) {
+        _tapp.should_quit = 1;
+}
 
-bool tapp__init(tapp_desc const *desc) {
-        TAPP.on_init     = desc->on_init;
-        TAPP.on_event    = desc->on_event;
-        TAPP.on_update   = desc->on_update;
-        TAPP.on_quit     = desc->on_quit;
-        return true;
+float tapp_aspect_ratio(void) {
+        return (float)_tapp.desc.width / (float)_tapp.desc.height;
+}
+
+void tapp__handle_quit_event(void) {
+        if (!_tapp.desc.on_event)
+                return;
+
+        _tapp.desc.on_event(&(tapp_event){
+                .type = TAPP_EVENT_TYPE_QUIT
+        });
+}
+
+void tapp__handle_resize_event(int w, int h) {
+        if (!_tapp.desc.on_event)
+                return;
+
+        _tapp.desc.on_event(&(tapp_event){
+                .type = TAPP_EVENT_TYPE_WINDOWRESIZE,
+                .resize = { .width = w, .height = h },
+        });
+
+        _tapp.desc.width  = w;
+        _tapp.desc.height = h;
+}
+
+void tapp__handle_button_event(int sym, int x, int y, int pressed) {
+        if (!_tapp.desc.on_event)
+                return;
+
+        _tapp.desc.on_event(&(tapp_event){
+                .type = pressed ? TAPP_EVENT_TYPE_MOUSEBUTTONDOWN : TAPP_EVENT_TYPE_MOUSEBUTTONUP,
+                .button = { .sym = sym, .pressed = pressed },
+        });
+}
+
+void tapp__handle_key_event(int sym, int pressed) {
+        if (!_tapp.desc.on_event)
+                return;
+
+        _tapp.desc.on_event(&(tapp_event){
+                .type = pressed ? TAPP_EVENT_TYPE_KEYDOWN : TAPP_EVENT_TYPE_KEYUP,
+                .key = { .sym = sym, .pressed = pressed },
+        });
 }
 
 //==============================================================
@@ -254,34 +291,198 @@ bool tapp__init(tapp_desc const *desc) {
 
 #if defined(__linux__)
 
-int main(int argc, char **argv) {
-        tapp_desc desc = tapp_main(argc, argv);
+int tapp__window_create(tapp_desc const *desc) {
+        static int first = 1;
 
-        if (!tapp__init(&desc) || !tapp__window_create_xcb(&desc) {
-                return -1;
+        if (first) {
+                int screenp = 0;
+                _tapp.xcb.con = xcb_connect(NULL, &screenp);
+
+                if (!_tapp.xcb.con)
+                        return 0;
+
+                xcb_setup_t const *setup = xcb_get_setup(_tapp.xcb.con);
+                xcb_screen_iterator_t iter = xcb_setup_roots_iterator(setup);
+
+                while (screenp-- > 0)
+                        xcb_screen_next(&iter);
+
+                _tapp.xcb.screen = iter.data;
+                first = 0;
         }
 
-        TAPP.on_init();
+        unsigned mask = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
+        unsigned list[] = {
+                screen->black_pixel,
+                XCB_EVENT_MASK_KEY_RELEASE
+                        | XCB_EVENT_MASK_KEY_PRESS
+                        | XCB_EVENT_MASK_EXPOSURE
+                        | XCB_EVENT_MASK_STRUCTURE_NOTIFY
+                        | XCB_EVENT_MASK_POINTER_MOTION
+                        | XCB_EVENT_MASK_BUTTON_PRESS
+                        | XCB_EVENT_MASK_BUTTON_RELEASE
+        };
 
-        while (!TAPP.will_quit) {
-                while (1) {
-                        if (!TAPP.on_event(tapp__translate_event_xcb(&event))) {
-                                TAPP.will_quit = true;
-                        }
+        int x = desc->x;
+        int y = desc->y;
+        int w = desc->w ? desc->w : 640;
+        int x = desc->x ? desc->w : 480;
+
+        _tapp.xcb.win = xcb_generate_id(con);
+        xcb_create_window(con, XCB_COPY_FROM_PARENT, _tapp.xcb.win, _tapp.xcb.screen->root, x, y, w, h, 0, XCB_WINDOW_CLASS_INPUT_OUTPUT, screen->root_visual, mask, list);
+
+        xcb_intern_atom_cookie_t cookie  = xcb_intern_atom(_tapp.xcb.con, 1, 12, "WM_PROTOCOLS");
+        xcb_intern_atom_reply_t *reply   = xcb_intern_atom_reply(_tapp.xcb.con, cookie, 0);
+        xcb_intern_atom_cookie_t cookie2 = xcb_intern_atom(_tapp.xcb.con, 0, 16, "WM_DELETE_WINDOW");
+
+        _tapp.xcb.wm_del_win = xcb_intern_atom_reply(_tapp.xcb.con, cookie2, 0);
+
+        xcb_change_property(_tapp.xcb.con, XCB_PROP_MODE_REPLACE, win, reply->atom, 4, 32, 1, &wm_del_win->atom);
+        free(reply);
+        xcb_map_window(_tapp.xcb.con, _tapp.xcb.win);
+        xcb_flush(_tapp.xcb.con);
+        return 1;
+}
+
+void tapp__delete_window(void) {
+        xcb_destroy_window(_tapp.xcb.con, _tapp.xcb.win);
+        xcb_disconnect(_tapp.xcb.con);
+        free(_tapp.xcb.wm_del_win);
+}
+
+int tapp__translate_key(int key) {
+        return 0; // TODO
+}
+
+void tapp__pump_events(void) {
+        static int mousex = 0;
+        static int mousey = 0;
+
+        xcb_generic_event_t* event = NULL;
+        while ((event = xcb_poll_for_event(_tapp.xcb.con))) {
+                int type = event->response_type & 0x7f;
+
+                switch (type) {
+                        case XCB_CLIENT_MESSAGE:
+                                if (((xcb_client_message_event_t *)event)->data.data32[0] != _tapp.xcb.wm_del_win->atom)
+                                        break; // Fall through otherwise
+                        case XCB_DESTROY_NOTIFY: {
+                                tapp__handle_quit_event();
+                        } break;
+                        case XCB_CONFIGURE_NOTIFY: {
+                                xcb_configure_notify_event_t const *cfg = (xcb_configure_notify_event_t const *)event;
+                                if (cfg->width != _tapp.desc.width || cfg->height != _tapp.desc.height)
+                                        tapp__handle_resize_event(cfg->width, cfg->height);
+                        } break;
+                        case XCB_MOTION_NOTIFY: {
+                                xcb_motion_notify_event_t const *motion = (xcb_motion_notify_event_t const *)event;
+                                mousex = (int)motion->event_x;
+                                mousey = (int)motion->event_y;
+                                tapp__handle_motion_event(mousex, mousey);
+                        } break;
+                        case XCB_BUTTON_PRESS:
+                        case XCB_BUTTON_RELEASE: {
+                                xcb_button_press_event_t const *button = (xcb_button_press_event_t const *)event;
+                                if (button->detail == XCB_BUTTON_INDEX_1)
+                                        tapp__handle_button_event(TAPP_MOUSE_BUTTON_1, mousex, mousey, type == XCB_BUTTON_PRESS);
+                                if (button->detail == XCB_BUTTON_INDEX_2)
+                                        tapp__handle_button_event(TAPP_MOUSE_BUTTON_2, mousex, mousey, type == XCB_BUTTON_PRESS);
+                                if (button->detail == XCB_BUTTON_INDEX_3)
+                                        tapp__handle_button_event(TAPP_MOUSE_BUTTON_3, mousex, mousey, type == XCB_BUTTON_PRESS);
+                        } break;
+                        case XCB_KEY_PRESS:
+                        case XCB_KEY_RELEASE: {
+                                xcb_key_release_event_t const *key = (xcb_key_release_event_t const *)event;
+                                int sym = tapp__translate_key(key->detail);
+                                tapp__handle_key_event(sym, type == XCB_KEY_PRESS);
+                        } break;
                 }
-
-                TAPP.on_update(dt);
+                free(event);
         }
-
-        TAPP.on_quit();
-
-        tapp__window_delete_xcb();
-        tapp__quit();
-        return 0;
 }
 
 #endif // __linux__
 
+//==============================================================
+// Entry point
+
+int tapp__init(tapp_desc const *desc) {
+        _tapp.on_init     = desc->on_init;
+        _tapp.on_event    = desc->on_event;
+        _tapp.on_update   = desc->on_update;
+        _tapp.on_quit     = desc->on_quit;
+        return tapp__window_create(desc);
+}
+
+void tapp__quit(void) {
+        tapp__delete_window();
+}
+
+int main(int argc, char **argv) {
+        tapp_desc desc = tapp_main(argc, argv);
+
+        if (!tapp__init(&desc))
+                return -1;
+
+        if (_tapp.on_init && !_tapp.on_init())
+                return -1;
+
+        // TODO: Update dt
+        float dt = 0.0f;
+        while (tapp__running()) {
+                tapp__pump_events()
+
+                if (_tapp.on_update)
+                        _tapp.on_update(dt);
+        }
+
+        if (_tapp.on_quit)
+                _tapp.on_quit();
+
+        tapp__quit();
+        return 0;
+}
+
 #endif // !__tiny_app_c__
-#endif // TAPP_IMPLEMENTATION || TINY_IMPLEMENTATION
+#endif // TINY_APP_IMPL || TINY_IMPL
 #endif // !__tiny_app_h__
+
+
+/// ## License
+/// This software is available under 2 licenses -- choose whichever you prefer.
+///
+/// #### ALTERNATIVE A - MIT License
+/// Copyright (c) 2022 Evan Dobson
+/// Permission is hereby granted, free of charge, to any person obtaining a copy of
+/// this software and associated documentation files (the "Software"), to deal in
+/// the Software without restriction, including without limitation the rights to
+/// use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+/// of the Software, and to permit persons to whom the Software is furnished to do
+/// so, subject to the following conditions:
+/// The above copyright notice and this permission notice shall be included in all
+/// copies or substantial portions of the Software.
+/// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+/// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+/// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+/// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+/// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+/// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+/// SOFTWARE.
+///
+/// #### ALTERNATIVE B - Public Domain (www.unlicense.org)
+/// This is free and unencumbered software released into the public domain.
+/// Anyone is free to copy, modify, publish, use, compile, sell, or distribute this
+/// software, either in source code form or as a compiled binary, for any purpose,
+/// commercial or non-commercial, and by any means.
+/// In jurisdictions that recognize copyright laws, the author or authors of this
+/// software dedicate any and all copyright interest in the software to the public
+/// domain. We make this dedication for the benefit of the public at large and to
+/// the detriment of our heirs and successors. We intend this dedication to be an
+/// overt act of relinquishment in perpetuity of all present and future rights to
+/// this software under copyright law.
+/// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+/// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+/// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+/// AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+/// ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+/// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

@@ -1,5 +1,5 @@
-#define TAPP_IMPLEMENTATION
-#define TGFX_IMPLEMENTATION
+#define TINY_APP_IMPL
+#define TINY_GFX_IMPL
 #include "../tiny_app.h"
 #include "../tiny_gfx.h"
 
@@ -16,17 +16,12 @@ void init(void) {
         };
 }
 
-void event(tapp_event event) {
-        if (event.type == TAPP_EVENT_TYPE_KEYUP && event.key.sym == TAPP_KEY_ESCAPE)
-        switch ()(event.type == TAPP_KEY_UP && event.key.sym == TAPP_KEY_ESCAPE);
-}
-
 void update(float dt) {
         float g = pass.colors[0].value.g + 0.01f;
         pass.colors[0].value.g = g > 1.0f ? 0.0f : g;
 
-        tgfx_begin_pass(cbo, &pass);
-        tgfx_end_pass(cbo);
+        tgfx_pass_begin(cbo, &pass);
+        tgfx_pass_end(cbo);
         tgfx_submit(cbo);
 }
 
@@ -36,10 +31,9 @@ void quit(void) {
 
 tapp_desc tapp_main(int argc, char **argv) {
         return (tapp_desc){
-                .window.title = "tapp | Clear",
-                .on_init      = init,
-                .on_event     = event,
-                .on_update    = update,
-                .on_quit      = quit
+                .title     = "tapp | Clear",
+                .on_init   = init,
+                .on_update = update,
+                .on_quit   = quit
         };
 }

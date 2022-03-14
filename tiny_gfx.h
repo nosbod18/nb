@@ -22,7 +22,7 @@ typedef enum tgfx_uniform_type {
 } tgfx_uniform_type;
 
 typedef enum tgfx_vertex_type {
-        tGFX_VERTEX_TYPE_INVALID = 0,
+        TGFX_VERTEX_TYPE_INVALID = 0,
         TGFX_VERTEX_TYPE_INT8,
         TGFX_VERTEX_TYPE_UINT8,
         TGFX_VERTEX_TYPE_INT16,
@@ -31,6 +31,11 @@ typedef enum tgfx_vertex_type {
         TGFX_VERTEX_TYPE_UINT32,
         TGFX_VERTEX_TYPE_FLOAT,
 } tgfx_vertex_type;
+
+typedef enum tgfx_index_type {
+        TGFX_INDEX_TYPE_UINT32 = 0,
+        TGFX_INDEX_TYPE_UINT16
+} tgfx_index_type;
 
 typedef enum tgfx_pass_action {
         TGFX_PASS_ACTION_DEFAULT = 0,
@@ -76,6 +81,7 @@ typedef struct tgfx_pipeline_desc {
                 int stride;
         } layout;
         tgfx_program *program;
+        tgfx_index_type index_type;
 } tgfx_pipeline_desc;
 
 typedef struct tgfx_pass_desc {
@@ -106,28 +112,27 @@ void            tgfx_program_update     (tgfx_program *program, int index, void 
 tgfx_pipeline  *tgfx_pipeline_create    (tgfx_pipeline_desc const *desc);
 void            tgfx_pipeline_delete    (tgfx_pipeline *pipeline);
 
-void            tgfx_begin_pass         (tgfx_buffer *command, tgfx_pass_desc const *desc);
-void            tgfx_end_pass           (tgfx_buffer *command);
+// Commands
+
+void            tgfx_pass_begin         (tgfx_buffer *command, tgfx_pass_desc const *desc);
+void            tgfx_pass_end           (tgfx_buffer *command);
 
 void            tgfx_buffer_bind        (tgfx_buffer *command, tgfx_buffer *buffer);
 void            tgfx_pipeline_bind      (tgfx_buffer *command, tgfx_pipeline *pipeline);
 
-void            tgfx_draw               (tgfx_buffer *command, int numVertices, int start);
-void            tgfx_draw_indexed       (tgfx_buffer *command, int numIndices, int start);
-void            tgfx_draw_instanced     (tgfx_buffer *command, int numIndices, int start, int numInstances);
-
+void            tgfx_draw               (tgfx_buffer *command, int count, int start, int numInstances);
 void            tgfx_submit             (tgfx_buffer *command);
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////                                                                                                                                                    ////
-////                                                                                                                                                    ////
-////                                                                   Implementation                                                                   ////
-////                                                                                                                                                    ////
-////                                                                                                                                                    ////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/***********************************************************************************************************************************************************
+************************************************************************************************************************************************************
+****                                                                                                                                                    ****
+****                                                                                                                                                    ****
+****                                                                   Implementation                                                                   ****
+****                                                                                                                                                    ****
+****                                                                                                                                                    ****
+************************************************************************************************************************************************************
+***********************************************************************************************************************************************************/
 
 
 #if defined(TGFX_IMPLEMENTATION) || defined(TINY_IMPLEMENTATION)
@@ -368,3 +373,43 @@ void tgfx_pipeline_delete(tgfx_pipeline *pipeline) {
 #endif // !__tiny_gfx_c__
 #endif // TGFX_IMPLEMENTATION || TINY_IMPLEMENTATION
 #endif // !__tiny_gfx_h__
+
+
+/// ## License
+/// This software is available under 2 licenses -- choose whichever you prefer.
+///
+/// #### ALTERNATIVE A - MIT License
+/// Copyright (c) 2022 Evan Dobson
+/// Permission is hereby granted, free of charge, to any person obtaining a copy of
+/// this software and associated documentation files (the "Software"), to deal in
+/// the Software without restriction, including without limitation the rights to
+/// use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+/// of the Software, and to permit persons to whom the Software is furnished to do
+/// so, subject to the following conditions:
+/// The above copyright notice and this permission notice shall be included in all
+/// copies or substantial portions of the Software.
+/// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+/// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+/// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+/// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+/// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+/// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+/// SOFTWARE.
+///
+/// #### ALTERNATIVE B - Public Domain (www.unlicense.org)
+/// This is free and unencumbered software released into the public domain.
+/// Anyone is free to copy, modify, publish, use, compile, sell, or distribute this
+/// software, either in source code form or as a compiled binary, for any purpose,
+/// commercial or non-commercial, and by any means.
+/// In jurisdictions that recognize copyright laws, the author or authors of this
+/// software dedicate any and all copyright interest in the software to the public
+/// domain. We make this dedication for the benefit of the public at large and to
+/// the detriment of our heirs and successors. We intend this dedication to be an
+/// overt act of relinquishment in perpetuity of all present and future rights to
+/// this software under copyright law.
+/// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+/// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+/// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+/// AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+/// ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+/// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

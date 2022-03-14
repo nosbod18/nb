@@ -1,18 +1,14 @@
-#define TAPP_IMPLEMENTATION
-#define TGFX_IMPLEMENTATION
+#define TINY_APP_IMPL
+#define TINY_GFX_IMPL
 #include "../tiny_app.h"
 #include "../tiny_gfx.h"
 
-tgfx_buffer   *cbo = NULL;
 tgfx_buffer   *vbo = NULL;
+tgfx_buffer   *cbo = NULL;
 tgfx_program  *prg = NULL;
 tgfx_pipeline *pip = NULL;
 
 void init(void) {
-        cbo = tgfx_buffer_create(&(tgfx_buffer_desc){
-                .type = TGFX_BUFFER_TYPE_COMMAND
-        });
-
         float const vertices[] = {
                  0.0f,  0.5f,  1.0f, 0.0f, 0.0f, 1.0f,
                  0.5f, -0.5f,  0.0f, 1.0f, 0.0f, 1.0f,
@@ -22,6 +18,10 @@ void init(void) {
         vbo = tgfx_buffer_create(&(tgfx_buffer_desc){
                 .data = vertices,
                 .size = sizeof vertices,
+        });
+
+        cbo = tgfx_buffer_create(&(tgfx_buffer_desc){
+                .type = TGFX_BUFFER_TYPE_COMMAND
         });
 
         prg = tgfx_program_create(&(tgfx_program_desc){
@@ -52,16 +52,12 @@ void init(void) {
         });
 }
 
-bool event(tapp_event event) {
-        return !(event.type == TAPP_KEYUP && event.key.sym == TAPP_KEY_ESCAPE);
-}
-
 void update(float dt) {
-        tgfx_begin_pass(cbo, &(tgfx_pass_desc){0});
+        tgfx_pass_begin(cbo, &(tgfx_pass_desc){0});
                 tgfx_buffer_bind(cbo, vbo);
                 tgfx_pipeline_bind(cbo, pip);
-                tgfx_draw(cbo, 3, 0);
-        tgfx_end_pass(cbo);
+                tgfx_draw(cbo, 3, 0, 0);
+        tgfx_pass_end(cbo);
         tgfx_submit(cbo);
 }
 
@@ -74,10 +70,9 @@ void quit(void) {
 
 tapp_desc tapp_main(int argc, char **argv) {
         return (tapp_desc){
-                .window.title   = "tapp | Triangle",
-                .on_init        = init,
-                .on_event       = event,
-                .on_update      = update,
-                .on_quit        = quit
+                .title     = "tapp | Triangle",
+                .on_init   = init,
+                .on_update = update,
+                .on_quit   = quit
         };
 }

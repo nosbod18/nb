@@ -1,20 +1,17 @@
-#define TINY_IMPLEMENTATION
+#define TINY_APP_IMPL
+#define TINY_GFX_IMPL
 #include "../tiny_app.h"
 #include "../tiny_gfx.h"
 #include "../tiny_math.h"
 
-tgfx_buffer   *cbo;
 tgfx_buffer   *vbo;
 tgfx_buffer   *ibo;
+tgfx_buffer   *cbo;
 tgfx_program  *prg;
 tgfx_pipeline *pip;
-tm_vec2        rot;
+float2         rot;
 
 void init(void) {
-        cbo = tgfx_buffer_create(&(tgfx_buffer_desc){
-                .type = TGFX_BUFFER_TYPE_COMMAND,
-        });
-
         float const vertices[] = {
                 -1.0f, -1.0f, -1.0f,   1.0f, 0.0f, 0.0f, 1.0f, // North
                  1.0f, -1.0f, -1.0f,   1.0f, 0.0f, 0.0f, 1.0f,
@@ -62,6 +59,10 @@ void init(void) {
                 .type = TGFX_BUFFER_TYPE_INDEX,
         });
 
+        cbo = tgfx_buffer_create(&(tgfx_buffer_desc){
+                .type = TGFX_BUFFER_TYPE_COMMAND,
+        });
+
         prg = tgfx_program_create(&(tgfx_program_desc){
                 .vs.source =
                         "#version 330 core\n"
@@ -87,50 +88,48 @@ void init(void) {
                         [1] = { .type = TGFX_VERTEX_TYPE_FLOAT, .count = 4 },
                 },
                 .program = prg,
+                .index_type = TGFX_INDEX_TYPE_UINT16,
         });
 }
 
-bool event(tapp_event event) {
-        return !(event.type == TAPP_KEYUP && event.key.sym == TAPP_KEY_ESCAPE);
-}
-
 void update(float dt) {
-        rot.x += 1.0f * dt;
-        rot.y += 2.0f * dt;
+        rot[0] += 1.0f * dt;
+        rot[1] += 2.0f * dt;
 
-        tm_mat4 rxm   = tm_rotate((tm_vec3){1.0f, 0.0f, 0.0f}, rot.x);
-        tm_mat4 rym   = tm_rotate((tm_vec3){0.0f, 1.0f, 0.0f}, rot.y);
-        tm_mat4 proj  = tm_perspective(60.0f, tapp_aspect_ratio(), 0.01f, 10.0f);
-        tm_mat4 view  = tm_lookat((tm_vec3){0.0f, 1.5f, 6.0f}, (tm_vec3){0}, (tm_vec3){0.0f, 1.0f, 0.0f});
-        tm_mat4 m     = tm_mat4_mul(rxm, rym);
-        tm_mat4 vp    = tm_mat4_mul(proj, view);
-        tm_mat4 mvp   = tm_mat4_mul(vp, m);
+        float4x4 rxm, rym, proj, view, m, vp, mvp;
+        float4x4_rotate_x(rxm, rot[0]);
+        float4x4_rotate_y(rym, rot[1]);
 
-        tgfx_begin_pass(cbo, &(tgfx_pass_desc){0});
+        float4x4_perspective(proj, 60.0f, tapp_aspect_ratio(), 0.01f, 10.0f);
+        float4x4_lookat(view, (float3){0.0f, 1.5f, 6.0f}, (float3){0}, (float3){0.0f, 1.0f, 0.0f});
+
+        float4x4_mul(m, rxm, rym);
+        float4x4_mul(vp, proj, view);
+        float4x4_mul(mvp, vp, m);
+
+        tgfx_pass_begin(cbo, &(tgfx_pass_desc){0});
                 tgfx_program_update(prg, 0, &mvp);
                 tgfx_buffer_bind(cbo, vbo);
                 tgfx_buffer_bind(cbo, ibo);
                 tgfx_pipeline_bind(cbo, pip);
-                tgfx_draw(cbo, 3, 0);
-        tgfx_end_pass(cbo);
-
+                tgfx_draw(cbo, 36, 0, 0);
+        tgfx_pass_end(cbo);
         tgfx_submit(cbo);
 }
 
 void quit(void) {
-        tgfx_buffer_delete(cbo);
         tgfx_buffer_delete(vbo);
         tgfx_buffer_delete(ibo);
+        tgfx_buffer_delete(cbo);
         tgfx_program_delete(prg);
         tgfx_pipeline_delete(pip);
 }
 
 tapp_desc tapp_main(int argc, char **argv) {
         return (tapp_desc){
-                .window.title   = "tapp | Cube",
-                .on_init        = init,
-                .on_event       = event,
-                .on_update      = update,
-                .on_quit        = quit
+                .title     = "tapp | Cube",
+                .on_init   = init,
+                .on_update = update,
+                .on_quit   = quit
         };
 }

@@ -1,4 +1,4 @@
-#define TAPP_IMPLEMENTATION
+#define TINY_APP_IMPL
 #include "../tiny_app.h"
 
 tapp_desc tapp_main(int argc, char **argv) {
