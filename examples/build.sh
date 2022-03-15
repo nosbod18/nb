@@ -7,6 +7,9 @@ CFLAGS="-std=c99 -Wall -Wextra -Wpedantic -Werror -g -DDEBUG"
 if [ "$(uname -s)" == "Linux" ]; then
         CFLAGS="$CFLAGS -D_GNU_SOURCE"
         LFLAGS="-lxcb"
+elif [ "$(uname -s)" == "Darwin" ]; then
+        CFLAGS="$CFLAGS -x objective-c"
+        LFLAGS="-framework Cocoa"
 fi
 
 # Compile

@@ -27,19 +27,19 @@ void init(void) {
         prg = tgfx_program_create(&(tgfx_program_desc){
                 .vs.source =
                         "#version 330 core\n"
-                        "layout(location = 0) in vec2 aPosition;\n"
-                        "layout(location = 1) in vec4 aColor;\n"
-                        "out vec4 vColor;\n"
+                        "layout(location = 0) in vec2 a_pos;\n"
+                        "layout(location = 1) in vec4 a_color;\n"
+                        "out vec4 v_color;\n"
                         "void main(void) {\n"
-                        "       gl_Position = vec4(aPosition, 0.0, 1.0);\n"
-                        "       vColor = aColor;\n"
+                        "       gl_Position = vec4(a_pos, 0.0, 1.0);\n"
+                        "       v_color = a_color;\n"
                         "}\n",
                 .fs.source =
                         "#version 330 core\n"
-                        "in vec4 vColor;\n"
-                        "out vec4 fColor;\n"
+                        "in vec4 v_color;\n"
+                        "out vec4 f_color;\n"
                         "void main(void) {\n"
-                        "       fColor = vColor;\n"
+                        "       f_color = v_color;\n"
                         "}\n",
         });
 
@@ -52,7 +52,7 @@ void init(void) {
         });
 }
 
-void update(float dt) {
+void update(double dt) {
         tgfx_pass_begin(cbo, &(tgfx_pass_desc){0});
                 tgfx_buffer_bind(cbo, vbo);
                 tgfx_pipeline_bind(cbo, pip);
@@ -70,9 +70,9 @@ void quit(void) {
 
 tapp_desc tapp_main(int argc, char **argv) {
         return (tapp_desc){
-                .title     = "tapp | Triangle",
-                .on_init   = init,
-                .on_update = update,
-                .on_quit   = quit
+                .window.title   = "tapp | Triangle",
+                .on_init        = init,
+                .on_update      = update,
+                .on_quit        = quit
         };
 }

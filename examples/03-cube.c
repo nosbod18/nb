@@ -92,7 +92,7 @@ void init(void) {
         });
 }
 
-void update(float dt) {
+void update(double dt) {
         rot[0] += 1.0f * dt;
         rot[1] += 2.0f * dt;
 
@@ -100,7 +100,10 @@ void update(float dt) {
         tm_float4x4_rotate_x(rxm, rot[0]);
         tm_float4x4_rotate_y(rym, rot[1]);
 
-        tm_float4x4_perspective(proj, 60.0f, tapp_aspect_ratio(), 0.01f, 10.0f);
+        int w, h;
+        tapp_window_get_size(tapp_get_main_window(), &w, &h);
+
+        tm_float4x4_perspective(proj, 60.0f, (float)w / (float)h, 0.01f, 10.0f);
         tm_float4x4_lookat(view, (tm_float3){0.0f, 1.5f, 6.0f}, (tm_float3){0}, (tm_float3){0.0f, 1.0f, 0.0f});
 
         tm_float4x4_mul(m, rxm, rym);
@@ -127,9 +130,9 @@ void quit(void) {
 
 tapp_desc tapp_main(int argc, char **argv) {
         return (tapp_desc){
-                .title     = "tapp | Cube",
-                .on_init   = init,
-                .on_update = update,
-                .on_quit   = quit
+                .window.title   = "tapp | Cube",
+                .on_init        = init,
+                .on_update      = update,
+                .on_quit        = quit
         };
 }

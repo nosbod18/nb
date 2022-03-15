@@ -11,12 +11,12 @@ void init(void) {
                 .type = TGFX_BUFFER_TYPE_COMMAND,
         });
 
-        pass = (tgfx_pass_desc) {
+        pass = (tgfx_pass_desc){
                 .colors[0] = { .action = TGFX_PASS_ACTION_CLEAR, .value = { 1.0f, 0.0f, 0.0f, 1.0f }}
         };
 }
 
-void update(float dt) {
+void update(double dt) {
         float g = pass.colors[0].value.g + 0.01f;
         pass.colors[0].value.g = g > 1.0f ? 0.0f : g;
 
@@ -31,9 +31,9 @@ void quit(void) {
 
 tapp_desc tapp_main(int argc, char **argv) {
         return (tapp_desc){
-                .title     = "tapp | Clear",
-                .on_init   = init,
-                .on_update = update,
-                .on_quit   = quit
+                .window.title   = "tapp | Clear",
+                .on_init        = init,
+                .on_update      = update,
+                .on_quit        = quit
         };
 }
