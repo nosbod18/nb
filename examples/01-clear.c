@@ -1,5 +1,5 @@
-#define TINY_APP_IMPL
-#define TINY_GFX_IMPL
+#define TAPP_IMPL
+#define TGFX_IMPL
 #include "../tiny_app.h"
 #include "../tiny_gfx.h"
 

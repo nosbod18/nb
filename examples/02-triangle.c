@@ -1,12 +1,12 @@
-#define TINY_APP_IMPL
-#define TINY_GFX_IMPL
+#define TAPP_IMPL
+#define TGFX_IMPL
 #include "../tiny_app.h"
 #include "../tiny_gfx.h"
 
-tgfx_buffer   *vbo = NULL;
-tgfx_buffer   *cbo = NULL;
-tgfx_program  *prg = NULL;
-tgfx_pipeline *pip = NULL;
+tgfx_buffer   *vbo;
+tgfx_buffer   *cbo;
+tgfx_program  *prg;
+tgfx_pipeline *pip;
 
 void init(void) {
         float const vertices[] = {

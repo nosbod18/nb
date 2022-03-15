@@ -135,7 +135,7 @@ void            tgfx_submit             (tgfx_buffer *command);
 ***********************************************************************************************************************************************************/
 
 
-#if defined(TGFX_IMPLEMENTATION) || defined(TINY_IMPLEMENTATION)
+#if defined(TGFX_IMPL) || defined(TINY_IMPL)
 #ifndef __tiny_gfx_c__
 #define __tiny_gfx_c__
 
@@ -161,11 +161,7 @@ struct tgfx_buffer {
 };
 
 struct tgfx_pipeline {
-        struct {
-                tgfx_vertex_desc attributes[16];
-                int stride;
-        } layout;
-        tgfx_program *program;
+        tgfx_pipeline_desc desc;
 };
 
 typedef struct tgfx_uniform {
@@ -177,8 +173,8 @@ typedef struct tgfx_uniform {
 
 static int tgfx__gl_buffer_type(tgfx_buffer_type type) {
         switch (type) {
-                case TGFX_BUFFER_TYPE_VERTEX:   return GL_ARRAY_BUFFER;
-                case TGFX_BUFFER_TYPE_INDEX:    return GL_ELEMENT_ARRAY_BUFFER;
+                case TGFX_BUFFER_TYPE_VERTEX:   return TGFX__GL_ARRAY_BUFFER;
+                case TGFX_BUFFER_TYPE_INDEX:    return TGFX__GL_ELEMENT_ARRAY_BUFFER;
                 default                         break;
         }
         return 0;
@@ -186,9 +182,9 @@ static int tgfx__gl_buffer_type(tgfx_buffer_type type) {
 
 static int tgfx__gl_buffer_usage(tgfx_buffer_usage usage) {
         switch (usage) {
-                case TGFX_BUFFER_USAGE_STATIC:  return GL_STATIC_DRAW;
-                case TGFX_BUFFER_USAGE_DYNAMIC: return GL_DYNAMIC_DRAW;
-                case TGFX_BUFFER_USAGE_STREAM:  return GL_STREAM_DRAW;
+                case TGFX_BUFFER_USAGE_STATIC:  return TGFX__GL_STATIC_DRAW;
+                case TGFX_BUFFER_USAGE_DYNAMIC: return TGFX__GL_DYNAMIC_DRAW;
+                case TGFX_BUFFER_USAGE_STREAM:  return TGFX__GL_STREAM_DRAW;
                 default:                        break;
         }
         return 0;
@@ -196,8 +192,8 @@ static int tgfx__gl_buffer_usage(tgfx_buffer_usage usage) {
 
 static int tgfx__gl_uniform_type(tgfx_uniform_type type) {
         switch (type) {
-                case TGFX_UNIFORM_TYPE_FLOAT:   return GL_FLOAT;
-                case TGFX_UNIFORM_TYPE_MATRIX:  return GL_FLOAT;
+                case TGFX_UNIFORM_TYPE_FLOAT:   return TGFX__GL_FLOAT;
+                case TGFX_UNIFORM_TYPE_MATRIX:  return TGFX__GL_FLOAT;
                 default:                        break;
         }
         return 0;
@@ -205,13 +201,13 @@ static int tgfx__gl_uniform_type(tgfx_uniform_type type) {
 
 static int tgfx__gl_vertex_type(tgfx_vertex_type type) {
         switch (type) {
-                case TGFX_VERTEX_TYPE_INT8:     return GL_BYTE;
-                case TGFX_VERTEX_TYPE_UINT8:    return GL_UNSIGNED_BYTE;
-                case TGFX_VERTEX_TYPE_INT16:    return GL_SHORT;
-                case TGFX_VERTEX_TYPE_UINT16:   return GL_UNSIGNED_SHORT;
-                case TGFX_VERTEX_TYPE_INT32:    return GL_INT;
-                case TGFX_VERTEX_TYPE_UINT32:   return GL_UNSIGNED_INT;
-                case TGFX_VERTEX_TYPE_FLOAT:    return GL_FLOAT;
+                case TGFX_VERTEX_TYPE_INT8:     return TGFX__GL_BYTE;
+                case TGFX_VERTEX_TYPE_UINT8:    return TGFX__GL_UNSIGNED_BYTE;
+                case TGFX_VERTEX_TYPE_INT16:    return TGFX__GL_SHORT;
+                case TGFX_VERTEX_TYPE_UINT16:   return TGFX__GL_UNSIGNED_SHORT;
+                case TGFX_VERTEX_TYPE_INT32:    return TGFX__GL_INT;
+                case TGFX_VERTEX_TYPE_UINT32:   return TGFX__GL_UNSIGNED_INT;
+                case TGFX_VERTEX_TYPE_FLOAT:    return TGFX__GL_FLOAT;
                 default:                        break;
         }
         return 0;
@@ -231,16 +227,16 @@ tgfx_buffer *tgfx_buffer_create(tgfx_buffer_desc const *desc) {
         buffer->type   = tgfx__gl_buffer_type(desc->type);
         buffer->useage = tgfx__gl_buffer_usage(desc->useage);
 
-        GL(glGenBuffers(1, &buffer->id));
-        GL(glBindBuffer(buffer->type, buffer->id));
-        GL(glBufferData(buffer->type, buffer->size, buffer->data, buffer->usage));
-        GL(glBindBuffer(buffer->type, 0));
+        TGFX__GL(glGenBuffers(1, &buffer->id));
+        TGFX__GL(glBindBuffer(buffer->type, buffer->id));
+        TGFX__GL(glBufferData(buffer->type, buffer->size, buffer->data, buffer->usage));
+        TGFX__GL(glBindBuffer(buffer->type, 0));
         return buffer;
 }
 
 void tgfx_buffer_delete(tgfx_buffer *buffer) {
         assert(buffer);
-        GL(glDeleteBuffers(1, &buffer->id));
+        TGFX__GL(glDeleteBuffers(1, &buffer->id));
         free(buffer);
 }
 
@@ -252,9 +248,9 @@ bool tgfx_buffer_update(tgfx_buffer *buffer, void const *data, int size) {
                 return false;
         }
 
-        GL(glBindBuffer(buffer->type, buffer->id));
-        GL(glBufferSubData(buffer->type, 0, size, data));
-        GL(glBindBuffer(buffer->type, 0));
+        TGFX__GL(glBindBuffer(buffer->type, buffer->id));
+        TGFX__GL(glBufferSubData(buffer->type, 0, size, data));
+        TGFX__GL(glBindBuffer(buffer->type, 0));
         buffer->size = size;
         return true;
 
@@ -267,26 +263,26 @@ bool tgfx_buffer_append(tgfx_buffer *buffer, void const *data, int size) {
                 return false;
         }
 
-        GL(glBindBuffer(buffer->type, buffer->id));
-        GL(glBufferSubData(buffer->type, buffer->offset, size, data));
-        GL(glBindBuffer(buffer->type, 0));
+        TGFX__GL(glBindBuffer(buffer->type, buffer->id));
+        TGFX__GL(glBufferSubData(buffer->type, buffer->offset, size, data));
+        TGFX__GL(glBindBuffer(buffer->type, 0));
         buffer->offset += size;
         return true;
 }
 
 static uint tgfx__gl_shader_create(char const *src, int type) {
-        GL(uint id = glCreateShader(type));
-        GL(glShaderSource(id, 1, (GLchar const **)&src, NULL));
-        GL(glCompileShader(id));
+        TGFX__GL(uint id = glCreateShader(type));
+        TGFX__GL(glShaderSource(id, 1, (TGFX__GLchar const **)&src, NULL));
+        TGFX__GL(glCompileShader(id));
 
         int compiled;
-        GL(glGetShaderiv(id, GL_COMPILE_STATUS, &compiled));
+        TGFX__GL(glGetShaderiv(id, TGFX__GL_COMPILE_STATUS, &compiled));
 
-        if (compiled == GL_FALSE) {
+        if (compiled == TGFX__GL_FALSE) {
                 char msg[128];
-                GL(glGetShaderInfoLog(id, sizeof msg, NULL, msg));
-                printf("[GL] Failed to compile shader\n%s\n", msg);
-                GL(glDeleteShader(id));
+                TGFX__GL(glGetShaderInfoLog(id, sizeof msg, NULL, msg));
+                printf("[TGFX__GL] Failed to compile shader\n%s\n", msg);
+                TGFX__GL(glDeleteShader(id));
                 return 0;
         }
 
@@ -296,8 +292,8 @@ static uint tgfx__gl_shader_create(char const *src, int type) {
 tgfx_program *tgfx_program_create(tgfx_program_desc const *desc) {
         assert(desc);
 
-        uint vs = tgfx__gl_shader_create(desc->vs.source, GL_VERTEX_SHADER);
-        uint fs = tgfx__gl_shader_create(desc->fs.source, GL_FRAGMENT_SHADER);
+        uint vs = tgfx__gl_shader_create(desc->vs.source, TGFX__GL_VERTEX_SHADER);
+        uint fs = tgfx__gl_shader_create(desc->fs.source, TGFX__GL_FRAGMENT_SHADER);
 
         if (!vs || !fs) {
                 return NULL;
@@ -308,48 +304,48 @@ tgfx_program *tgfx_program_create(tgfx_program_desc const *desc) {
                 return NULL;
         }
 
-        GL(glAttachShader(program->id, vs));
-        GL(glAttachShader(program->id, fs));
-        GL(glLinkProgram(program->id));
-        GL(glValidateProgram(program->id));
-        GL(glDetachShader(program->id, vs));
-        GL(glDetachShader(program->id, fs));
+        TGFX__GL(glAttachShader(program->id, vs));
+        TGFX__GL(glAttachShader(program->id, fs));
+        TGFX__GL(glLinkProgram(program->id));
+        TGFX__GL(glValidateProgram(program->id));
+        TGFX__GL(glDetachShader(program->id, vs));
+        TGFX__GL(glDetachShader(program->id, fs));
         return program;
 }
 
 void tgfx_program_delete(tgfx_program *program) {
-        GL(glDeleteProgram(program->id));
+        TGFX__GL(glDeleteProgram(program->id));
         free(program);
 }
 
 void tgfx_program_update(tgfx_program *program, int index, void const *data) {
         assert(program);
-        asssert(data);
+        assert(data);
 
-        GL(glUseProgram(program->id));
+        TGFX__GL(glUseProgram(program->id));
 
         tgfx_uniform uni = program->uniforms[index];
         switch (uni.type) {
                 case TGFX_UNIFORM_TYPE_FLOAT: {
                         switch (uni.count) {
                                 float const *v = data;
-                                case 1: GL(glUniform1f(uni.loc, v[0]));                   break;
-                                case 2: GL(glUniform2f(uni.loc, v[0], v[1]));             break;
-                                case 3: GL(glUniform3f(uni.loc, v[0], v[1], v[2]));       break;
-                                case 4: GL(glUniform4f(uni.loc, v[0], v[1], v[2], v[3])); break;
-                                default:                                                  break;
+                                case 1: TGFX__GL(glUniform1f(uni.loc, v[0]));                   break;
+                                case 2: TGFX__GL(glUniform2f(uni.loc, v[0], v[1]));             break;
+                                case 3: TGFX__GL(glUniform3f(uni.loc, v[0], v[1], v[2]));       break;
+                                case 4: TGFX__GL(glUniform4f(uni.loc, v[0], v[1], v[2], v[3])); break;
+                                default:                                                        break;
                         }
                 } break;
 
                 case TGFX_UNIFORM_TYPE_MATRIX: {
-                        GL(glUniformMatrix4fv(uni.loc, 1, uni.transposed, (float const *)data));
+                        TGFX__GL(glUniformMatrix4fv(uni.loc, 1, uni.transposed, (float const *)data));
                 } break;
 
                 default: {
                 } break;
         }
 
-        GL(glUseProgram(0));
+        TGFX__GL(glUseProgram(0));
 }
 
 tgfx_pipeline *tgfx_pipeline_create(tgfx_pipeline_desc const *desc) {
@@ -361,7 +357,7 @@ tgfx_pipeline *tgfx_pipeline_create(tgfx_pipeline_desc const *desc) {
                 return NULL;
         }
 
-        memcpy(&pipeline, &desc, sizeof pipline);
+        pipeline->desc = *desc;
         return pipeline;
 }
 

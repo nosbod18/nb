@@ -127,19 +127,21 @@ typedef enum tapp_key {
         TAPP_KEY_CAPS_LOCK              = 0xbb,
         TAPP_KEY_SCROLL_LOCK            = 0xbc,
         TAPP_KEY_LAST                   = 0x100 // 256
-} TAPP_Key;
+} tapp_key;
 
-typedef enum tapp_mouse_button {
-        TAPP_MOUSE_BUTTON_1 = 0,
-        TAPP_MOUSE_BUTTON_2,
-        TAPP_MOUSE_BUTTON_3,
-        TAPP_MOUSE_BUTTON_4,
-        TAPP_MOUSE_BUTTON_5,
-        TAPP_MOUSE_BUTTON_LAST,
+typedef enum tapp_button {
+        TAPP_MOUSE_BUTTON_1             = 0x01,
+        TAPP_MOUSE_BUTTON_2             = 0x02,
+        TAPP_MOUSE_BUTTON_3             = 0x03,
+        TAPP_MOUSE_BUTTON_4             = 0x04,
+        TAPP_MOUSE_BUTTON_5             = 0x05,
+        TAPP_MOUSE_BUTTON_6             = 0x05,
+        TAPP_MOUSE_BUTTON_7             = 0x07,
+        TAPP_MOUSE_BUTTON_LAST          = 0x08,
         TAPP_MOUSE_BUTTON_LEFT          = TAPP_MOUSE_BUTTON_1,
         TAPP_MOUSE_BUTTON_MIDDLE        = TAPP_MOUSE_BUTTON_2,
         TAPP_MOUSE_BUTTON_RIGHT         = TAPP_MOUSE_BUTTON_3,
-} tapp_mouse_button;
+} tapp_button;
 
 typedef enum tapp_mod {
         TAPP_MOD_SHIFT                  = 1 << 0,
@@ -152,44 +154,102 @@ typedef enum tapp_mod {
 } tapp_mod;
 
 typedef enum tapp_event_type {
-        TAPP_EVENT_TYPE_NONE = 0,
-        TAPP_EVENT_TYPE_WINDOWEXPOSE,
-        TAPP_EVENT_TYPE_WINDOWRESIZE,
-        TAPP_EVENT_TYPE_WINDOWFOCUS,
-        TAPP_EVENT_TYPE_MOUSEBUTTONDOWN,
-        TAPP_EVENT_TYPE_MOUSEBUTTONUP,
-        TAPP_EVENT_TYPE_MOUSEENTER,
-        TAPP_EVENT_TYPE_MOUSELEAVE,
-        TAPP_EVENT_TYPE_MOUSEMOTION,
-        TAPP_EVENT_TYPE_MOUSESCROLL,
-        TAPP_EVENT_TYPE_KEYDOWN,
-        TAPP_EVENT_TYPE_KEYUP,
-        TAPP_EVENT_TYPE_QUIT,
-        TAPP_EVENT_TYPE_LAST
+        TAPP_EVENT_TYPE_NONE            = 0, // No event
+        TAPP_EVENT_TYPE_WINDOWCLOSE,         // A window was closed. Note that this does not necessarily mean TAPP_EVENT_TYPE_QUIT if there is multiple windows
+        TAPP_EVENT_TYPE_WINDOWEXPOSE,        // A window was exposed and needs to be redrawn
+        TAPP_EVENT_TYPE_WINDOWRESIZE,        // A window's size was changed
+        TAPP_EVENT_TYPE_WINDOWFOCUS,         // A window's focus was changed
+        TAPP_EVENT_TYPE_MOUSEBUTTON,         // A mouse button was pressed or released
+        TAPP_EVENT_TYPE_MOUSEENTER,          // The mouse entered the window space
+        TAPP_EVENT_TYPE_MOUSELEAVE,          // The mouse left the window space
+        TAPP_EVENT_TYPE_MOUSEMOTION,         // The mouse changed position
+        TAPP_EVENT_TYPE_MOUSESCROLL,         // The scroll wheel was moved
+        TAPP_EVENT_TYPE_KEY,                 // A key was pressed or released
 } tapp_event_type;
 
+typedef struct tapp_window tapp_window;
+
+typedef struct tapp_window_desc {
+        char const *title;
+        int x;
+        int y;
+        int width;
+        int height;
+        int fullscreen;
+        int vsync;
+} tapp_window_desc;
+
+typedef struct tapp_close_event {
+        tapp_event_type type;
+        tapp_window *window;
+} tapp_close_event;
+
+typedef struct tapp_expose_event {
+        tapp_event_type type;
+        tapp_window *window;
+        int visible;
+} tapp_expose_event;
+
+typedef struct tapp_focus_event {
+        tapp_event_type type;
+        tapp_window *window;
+        int focused;
+} tapp_focus_event;
+
+typedef struct tapp_resize_event {
+        tapp_event_type type;
+        tapp_window *window;
+        int width;
+        int height;
+} tapp_resize_event;
+
+typedef struct tapp_key_event {
+        tapp_event_type type;
+        tapp_key sym;
+        unsigned mods;
+        int pressed;
+} tapp_key_event;
+
+typedef struct tapp_button_event {
+        tapp_event_type type;
+        tapp_button sym;
+        unsigned mods;
+        int pressed;
+        int x;
+        int y;
+} tapp_button_event;
+
+typedef struct tapp_motion_event {
+        tapp_event_type type;
+        double dx;
+        double dy;
+} tapp_motion_event;
+
+typedef struct tapp_scroll_event {
+        tapp_event_type type;
+        double dx;
+        double dy;
+} tapp_scroll_event;
+
 typedef union tapp_event {
-        int                                               type;
-        struct { int type, visible;                     } expose;
-        struct { int type, focused;                     } focus;
-        struct { int type, width, height;               } resize;
-        struct { int type,       sym, mods, pressed;    } key;
-        struct { int type, x, y, sym, mods, pressed;    } button;
-        struct { int type, x, y, sym;                   } motion;
-        struct { int type; double x, y;                 } scroll;
+        int                     type;
+        tapp_close_event        close;
+        tapp_expose_event       expose;
+        tapp_focus_event        focus;
+        tapp_resize_event       resize;
+        tapp_key_event          key;
+        tapp_button_event       button;
+        tapp_motion_event       motion;
+        tapp_scroll_event       scroll;
 } tapp_event;
 
 typedef void (*tapp_init_callback)(void);
 typedef void (*tapp_event_callback)(tapp_event const *event);
-typedef void (*tapp_update_callback)(float dt);
+typedef void (*tapp_update_callback)(double dt);
 typedef void (*tapp_quit_callback)(void);
 
 typedef struct tapp_desc {
-        char const             *title;
-        int                     width;
-        int                     height;
-        int                     fullscreen;
-        int                     vsync;
+        tapp_window_desc        window;
         tapp_init_callback      on_init;
         tapp_event_callback     on_event;
         tapp_update_callback    on_update;
@@ -198,8 +258,19 @@ typedef struct tapp_desc {
 
 
 tapp_desc       tapp_main               (int argc, char **argv);
-void            tapp_request_quit       (void);
-float           tapp_aspect_ratio       (void);
+
+void            tapp_process_events     (void);
+int             tapp_get_should_quit    (void);
+void            tapp_set_should_quit    (int quit);
+
+tapp_window    *tapp_window_create      (tapp_window_desc const *desc);
+void            tapp_window_delete      (tapp_window *window);
+void            tapp_window_show        (tapp_window const *window, int show);
+void            tapp_window_get_pos     (tapp_window const *window, int *x, int *y);
+void            tapp_window_get_size    (tapp_window const *window, int *w, int *h);
+void            tapp_window_set_pos     (tapp_window *window, int x, int y);
+void            tapp_window_set_size    (tapp_window *window, int w, int h);
+void            tapp_window_set_title   (tapp_window *window, char const *title);
 
 
 /***********************************************************************************************************************************************************
@@ -213,192 +284,119 @@ float           tapp_aspect_ratio       (void);
 ***********************************************************************************************************************************************************/
 
 
-#if defined(TINY_APP_IMPL) || defined(TINY_IMPL)
+#if defined(TAPP_IMPL) || defined(TINY_IMPL)
 #ifndef __tiny_app_c__
 #define __tiny_app_c__
 
 #if defined(__linux__)
-        #include <xcb/xcb.h>
-#endif
-
-static struct {
-#if defined(__linux__)
-        struct {
-                xcb_connection_t        *con;
-                xcb_screen_t            *screen;
-                xcb_window_t             win;
-                xcb_intern_atom_reply_t *wm_del_win;
-        } xcb;
+        #include <X11/Xlib.h>
 #endif // __linux__
 
+#include <stdio.h> // fprintf
+#include <stdlib.h>
+
+
+struct tapp_window {
+#if defined(__linux__)
+        struct {
+                Display *dpy;
+                Window wnd;
+                Atom wm_del_win;
+        } x11;
+#endif
+
+        tapp_window_desc desc;
+};
+
+static struct {
         tapp_desc desc;
         int should_quit;
-} _tapp = {0};
+} _tapp = 0;
 
+// Internal function prototypes
 
-void tapp_request_quit(void) {
-        _tapp.should_quit = 1;
-}
+void _tapp_post_quit_event      (void);
+void _tapp_post_close_event     (tapp_window *window);
+void _tapp_post_resize_event    (tapp_window *window, int w, int h);
+void _tapp_post_expose_event    (tapp_window *window, int exposed);
+void _tapp_post_focus_event     (tapp_window *window, int focused);
+void _tapp_post_key_event       (tapp_key sym, unsigned mods, int pressed);
+void _tapp_post_button_event    (tapp_button sym, unsigned mods, int pressed);
+void _tapp_post_enter_event     (tapp_window *window, int x, int y);
+void _tapp_post_leave_event     (tapp_window *window, int x, int y);
+void _tapp_post_motion_event    (double dx, double dy);
+void _tapp_post_scroll_event    (double dx, double dy);
 
-float tapp_aspect_ratio(void) {
-        return (float)_tapp.desc.width / (float)_tapp.desc.height;
-}
+inline void _tapp_noop          (void) {}
 
-void tapp__handle_quit_event(void) {
-        if (!_tapp.desc.on_event)
-                return;
-
-        _tapp.desc.on_event(&(tapp_event){
-                .type = TAPP_EVENT_TYPE_QUIT
-        });
-}
-
-void tapp__handle_resize_event(int w, int h) {
-        if (!_tapp.desc.on_event)
-                return;
-
-        _tapp.desc.on_event(&(tapp_event){
-                .type = TAPP_EVENT_TYPE_WINDOWRESIZE,
-                .resize = { .width = w, .height = h },
-        });
-
-        _tapp.desc.width  = w;
-        _tapp.desc.height = h;
-}
-
-void tapp__handle_button_event(int sym, int x, int y, int pressed) {
-        if (!_tapp.desc.on_event)
-                return;
-
-        _tapp.desc.on_event(&(tapp_event){
-                .type = pressed ? TAPP_EVENT_TYPE_MOUSEBUTTONDOWN : TAPP_EVENT_TYPE_MOUSEBUTTONUP,
-                .button = { .sym = sym, .pressed = pressed },
-        });
-}
-
-void tapp__handle_key_event(int sym, int pressed) {
-        if (!_tapp.desc.on_event)
-                return;
-
-        _tapp.desc.on_event(&(tapp_event){
-                .type = pressed ? TAPP_EVENT_TYPE_KEYDOWN : TAPP_EVENT_TYPE_KEYUP,
-                .key = { .sym = sym, .pressed = pressed },
-        });
-}
 
 //==============================================================
 // Linux
 
 #if defined(__linux__)
 
-int tapp__window_create(tapp_desc const *desc) {
-        static int first = 1;
-
-        if (first) {
-                int screenp = 0;
-                _tapp.xcb.con = xcb_connect(NULL, &screenp);
-
-                if (!_tapp.xcb.con)
-                        return 0;
-
-                xcb_setup_t const *setup = xcb_get_setup(_tapp.xcb.con);
-                xcb_screen_iterator_t iter = xcb_setup_roots_iterator(setup);
-
-                while (screenp-- > 0)
-                        xcb_screen_next(&iter);
-
-                _tapp.xcb.screen = iter.data;
-                first = 0;
+tapp_window *tapp_window_create(tapp_window_desc const *desc) {
+        tapp_window *window = calloc(1, sizeof *window);
+        if (!window) {
+                return NULL;
         }
 
-        unsigned mask = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
-        unsigned list[] = {
-                screen->black_pixel,
-                XCB_EVENT_MASK_KEY_RELEASE
-                        | XCB_EVENT_MASK_KEY_PRESS
-                        | XCB_EVENT_MASK_EXPOSURE
-                        | XCB_EVENT_MASK_STRUCTURE_NOTIFY
-                        | XCB_EVENT_MASK_POINTER_MOTION
-                        | XCB_EVENT_MASK_BUTTON_PRESS
-                        | XCB_EVENT_MASK_BUTTON_RELEASE
+        /* Open X11 display */
+        window->dpy = XOpenDisplay(NULL);
+        if (!dpy) {
+                TAPP_LOG("Failed to connect to X server");
+                tapp_window_delete(window);
+                return NULL;
+        }
+
+        /* Setup common parameters for window creation */
+        Window  root_wnd = DefaultRootWindow(dpy);
+        int     screen   = DefaultScreen(dpy);
+        Visual *visual   = DefaultVisual(dpy, screen);
+        int     depth    = DefaultDepth(dpy, screen);
+
+        /* Setup window attributes */
+        XSetWindowAttributes swa = {
+                .background_pixel = WhitePixel(dpy, screen),
+                .event_mask       = ExposureMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask,
         };
 
-        int x = desc->x;
-        int y = desc->y;
-        int w = desc->w ? desc->w : 640;
-        int x = desc->x ? desc->w : 480;
+        unsigned long swa_mask = CWEventMask | CWBorderPixel | CWBackPixel;
 
-        _tapp.xcb.win = xcb_generate_id(con);
-        xcb_create_window(con, XCB_COPY_FROM_PARENT, _tapp.xcb.win, _tapp.xcb.screen->root, x, y, w, h, 0, XCB_WINDOW_CLASS_INPUT_OUTPUT, screen->root_visual, mask, list);
+        Window wnd = XCreateWindow(dpy, root_wnd, x, y, w, h, 0, depth, InputOutput, visual, swa_mask, &swa);
 
-        xcb_intern_atom_cookie_t cookie  = xcb_intern_atom(_tapp.xcb.con, 1, 12, "WM_PROTOCOLS");
-        xcb_intern_atom_reply_t *reply   = xcb_intern_atom_reply(_tapp.xcb.con, cookie, 0);
-        xcb_intern_atom_cookie_t cookie2 = xcb_intern_atom(_tapp.xcb.con, 0, 16, "WM_DELETE_WINDOW");
+        tapp_window_set_title(window, desc->title);
+        tapp_window_show(window, 1);
 
-        _tapp.xcb.wm_del_win = xcb_intern_atom_reply(_tapp.xcb.con, cookie2, 0);
-
-        xcb_change_property(_tapp.xcb.con, XCB_PROP_MODE_REPLACE, win, reply->atom, 4, 32, 1, &wm_del_win->atom);
-        free(reply);
-        xcb_map_window(_tapp.xcb.con, _tapp.xcb.win);
-        xcb_flush(_tapp.xcb.con);
-        return 1;
+        /* Enable WM_DELETE_WINDOW protocol */
+        Atom wm_del_win = XInternAtom(dpy, "WM_DELETE_WINDOW", False);
+        XSetWMProtocols(dpy, wnd, &wm_del_win, 1);
 }
 
-void tapp__delete_window(void) {
-        xcb_destroy_window(_tapp.xcb.con, _tapp.xcb.win);
-        xcb_disconnect(_tapp.xcb.con);
-        free(_tapp.xcb.wm_del_win);
-}
+void tapp_window_delete(tapp_window *window) {
+        XDestroyWindow(dpy, wnd);
 
-int tapp__translate_key(int key) {
-        return 0; // TODO
-}
-
-void tapp__pump_events(void) {
-        static int mousex = 0;
-        static int mousey = 0;
-
-        xcb_generic_event_t* event = NULL;
-        while ((event = xcb_poll_for_event(_tapp.xcb.con))) {
-                int type = event->response_type & 0x7f;
-
-                switch (type) {
-                        case XCB_CLIENT_MESSAGE:
-                                if (((xcb_client_message_event_t *)event)->data.data32[0] != _tapp.xcb.wm_del_win->atom)
-                                        break; // Fall through otherwise
-                        case XCB_DESTROY_NOTIFY: {
-                                tapp__handle_quit_event();
-                        } break;
-                        case XCB_CONFIGURE_NOTIFY: {
-                                xcb_configure_notify_event_t const *cfg = (xcb_configure_notify_event_t const *)event;
-                                if (cfg->width != _tapp.desc.width || cfg->height != _tapp.desc.height)
-                                        tapp__handle_resize_event(cfg->width, cfg->height);
-                        } break;
-                        case XCB_MOTION_NOTIFY: {
-                                xcb_motion_notify_event_t const *motion = (xcb_motion_notify_event_t const *)event;
-                                mousex = (int)motion->event_x;
-                                mousey = (int)motion->event_y;
-                                tapp__handle_motion_event(mousex, mousey);
-                        } break;
-                        case XCB_BUTTON_PRESS:
-                        case XCB_BUTTON_RELEASE: {
-                                xcb_button_press_event_t const *button = (xcb_button_press_event_t const *)event;
-                                if (button->detail == XCB_BUTTON_INDEX_1)
-                                        tapp__handle_button_event(TAPP_MOUSE_BUTTON_1, mousex, mousey, type == XCB_BUTTON_PRESS);
-                                if (button->detail == XCB_BUTTON_INDEX_2)
-                                        tapp__handle_button_event(TAPP_MOUSE_BUTTON_2, mousex, mousey, type == XCB_BUTTON_PRESS);
-                                if (button->detail == XCB_BUTTON_INDEX_3)
-                                        tapp__handle_button_event(TAPP_MOUSE_BUTTON_3, mousex, mousey, type == XCB_BUTTON_PRESS);
-                        } break;
-                        case XCB_KEY_PRESS:
-                        case XCB_KEY_RELEASE: {
-                                xcb_key_release_event_t const *key = (xcb_key_release_event_t const *)event;
-                                int sym = tapp__translate_key(key->detail);
-                                tapp__handle_key_event(sym, type == XCB_KEY_PRESS);
-                        } break;
-                }
-                free(event);
+        if (!(--g_win_count)) {
+                XCloseDisplay(dpy);
         }
+}
+
+void tapp_window_show(tapp_window *window, int show) {
+        if (show) {
+                XMapWindow(_tapp.x11.dpy, window->x11.wnd);
+                XMoveWindow(_tapp.x11.dpy, window->x11.wnd, window->desc.x, window->desc.y);
+        } else {
+                XUnmapWindow(_tapp.x11.dpy, window->x11.wnd);
+        }
+}
+
+void tapp_window_set_title(tapp_window *window, char const *title) {
+        XStoreName(_tapp.x11.dpy, window->x11.wnd, title);
+}
+
+int _tapp_translate_key(int key) {
+        (void)key;
+        return 0;
 }
 
 #endif // __linux__
@@ -406,42 +404,84 @@ void tapp__pump_events(void) {
 //==============================================================
 // Entry point
 
-int tapp__init(tapp_desc const *desc) {
-        _tapp.on_init     = desc->on_init;
-        _tapp.on_event    = desc->on_event;
-        _tapp.on_update   = desc->on_update;
-        _tapp.on_quit     = desc->on_quit;
-        return tapp__window_create(desc);
-}
-
-void tapp__quit(void) {
-        tapp__delete_window();
-}
+#ifndef TAPP_CUSTOM_ENTRY
 
 int main(int argc, char **argv) {
         tapp_desc desc = tapp_main(argc, argv);
 
-        if (!tapp__init(&desc))
+        if (!desc.on_init)   desc.on_init   = _tapp_noop;
+        if (!desc.on_event)  desc.on_event  = _tapp_noop;
+        if (!desc.on_update) desc.on_update = _tapp_noop;
+        if (!desc.on_quit)   desc.on_quit   = _tapp_noop;
+
+        tapp_window *main_window = tapp_window_create(&desc.window);
+        if (!main_window) {
+                TAPP_LOG("Failed to create main window");
                 return -1;
-
-        if (_tapp.on_init && !_tapp.on_init())
-                return -1;
-
-        // TODO: Update dt
-        float dt = 0.0f;
-        while (tapp__running()) {
-                tapp__pump_events()
-
-                if (_tapp.on_update)
-                        _tapp.on_update(dt);
         }
 
-        if (_tapp.on_quit)
-                _tapp.on_quit();
+        desc.on_init();
 
-        tapp__quit();
+        double dt = 0.0;
+        while (tapp_process_events(main_window, desc.on_event)) {
+                desc.on_update();
+        }
+
+        if (desc.on_quit)
+                desc.on_quit();
+
+        tapp_window_delete(main_window);
         return 0;
 }
+
+#endif // !TAPP_CUSTOM_ENTRY
+
+
+//==============================================================
+// Internal function implementation
+
+void _tapp_post_quit_event(tapp_event_callback on_event) {
+        on_event(&(tapp_event){
+                .type = TAPP_EVENT_TYPE_QUIT
+        });
+}
+
+void _tapp_post_resize_event(tapp_event_callback on_event, tapp_window *window, int w, int h) {
+        on_event(&(tapp_event){
+                .resize = {
+                        .type = TAPP_EVENT_TYPE_RESIZE,
+                        .window = window,
+                        .width = w,
+                        .height = h
+                },
+        });
+
+        window->desc.width  = w;
+        window->desc.height = h;
+}
+
+void _tapp_post_button_event(tapp_event_callback on_event, int sym, int x, int y, int pressed) {
+        on_event(&(tapp_event){
+                .button = {
+                        .type = TAPP_EVENT_TYPE_MOUSEBUTTON,
+                        .x = x,
+                        .y = y,
+                        .sym = sym,
+                        .pressed = pressed,
+                }
+        });
+}
+
+void _tapp_post_key_event(tapp_event_callback on_event, int sym, int pressed) {
+        on_event(&(tapp_event){
+                .key = {
+                        .type = TAPP_EVENT_TYPE_KEY,
+                        .sym = sym,
+                        .pressed = pressed,
+                }
+        });
+}
+
 
 #endif // !__tiny_app_c__
 #endif // TINY_APP_IMPL || TINY_IMPL

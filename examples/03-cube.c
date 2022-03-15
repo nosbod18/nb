@@ -1,5 +1,5 @@
-#define TINY_APP_IMPL
-#define TINY_GFX_IMPL
+#define TAPP_IMPL
+#define TGFX_IMPL
 #include "../tiny_app.h"
 #include "../tiny_gfx.h"
 #include "../tiny_math.h"
@@ -9,7 +9,7 @@ tgfx_buffer   *ibo;
 tgfx_buffer   *cbo;
 tgfx_program  *prg;
 tgfx_pipeline *pip;
-float2         rot;
+tm_float2      rot;
 
 void init(void) {
         float const vertices[] = {
@@ -96,16 +96,16 @@ void update(float dt) {
         rot[0] += 1.0f * dt;
         rot[1] += 2.0f * dt;
 
-        float4x4 rxm, rym, proj, view, m, vp, mvp;
-        float4x4_rotate_x(rxm, rot[0]);
-        float4x4_rotate_y(rym, rot[1]);
+        tm_float4x4 rxm, rym, proj, view, m, vp, mvp;
+        tm_float4x4_rotate_x(rxm, rot[0]);
+        tm_float4x4_rotate_y(rym, rot[1]);
 
-        float4x4_perspective(proj, 60.0f, tapp_aspect_ratio(), 0.01f, 10.0f);
-        float4x4_lookat(view, (float3){0.0f, 1.5f, 6.0f}, (float3){0}, (float3){0.0f, 1.0f, 0.0f});
+        tm_float4x4_perspective(proj, 60.0f, tapp_aspect_ratio(), 0.01f, 10.0f);
+        tm_float4x4_lookat(view, (tm_float3){0.0f, 1.5f, 6.0f}, (tm_float3){0}, (tm_float3){0.0f, 1.0f, 0.0f});
 
-        float4x4_mul(m, rxm, rym);
-        float4x4_mul(vp, proj, view);
-        float4x4_mul(mvp, vp, m);
+        tm_float4x4_mul(m, rxm, rym);
+        tm_float4x4_mul(vp, proj, view);
+        tm_float4x4_mul(mvp, vp, m);
 
         tgfx_pass_begin(cbo, &(tgfx_pass_desc){0});
                 tgfx_program_update(prg, 0, &mvp);
