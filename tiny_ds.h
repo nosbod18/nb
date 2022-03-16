@@ -4,14 +4,10 @@
 #ifndef __tiny_ds_h__
 #define __tiny_ds_h__
 
-#include <string.h> // memmove
+#include <string.h> // memmove, memcpy
 #include <stddef.h> // size_t
 
-
-// ======== General ============================================
-
 #define tds__var(x) _##x##__LINE__
-
 
 /// ## Array
 ///
@@ -143,6 +139,7 @@
 /// tds_array_foreach(T it, T *array, ...);
 /// ```
 
+#define tds_array(T)                    T *
 #define tds_array_reserve(a, n)         (tds_array_cap(a) < (n) ? ((a) = tds_array__grow(a, n), 0) : 0)
 #define tds_array_free(a)               ((a) = tds_array__realloc(a, 0, 0))
 #define tds_array_cap(a)                ((a) ? tds_array__cap(a) : 0)
@@ -161,7 +158,9 @@
 #define tds_array_clear(a)              ((a) ? (tds_array__len(a) = 0, 0) : 0)
 
 #define tds_array_begin(a)              (a)
-#define tds_array_end(a)                ((a) + tds_array_len(a))
+#define tds_array_end(a)                ((a) + tds_array_len(a) - 1)
+#define tds_array_first(a)              (*tds_array_begin(a)) // Assumes a is valid
+#define tds_array_last(a)               (*tds_array_end(a)) // Assumes a is valid
 
 #define tds_array_foreach(x, a, ...)\
         do {\
@@ -182,6 +181,7 @@
 #define tds_array__cap(a)               ((size_t *(a))[-2])
 #define tds_array__len(a)               ((size_t *(a))[-1])
 #define tds_array__grow(a, n)           (!(a) || tds_array__len(a) >= tds_array__cap(a) ? ((a) = tds_array__realloc(a, sizeof *a, n), 0) : 0)
+
 void   *tds_array__realloc              (void *a, size_t asize, size_t n);
 
 
@@ -191,7 +191,7 @@ void   *tds_array__realloc              (void *a, size_t asize, size_t n);
 /// A generic hashmap implementation. A hashmap is really a specialized array, where the array type is a struct that has a key and value field.
 /// Since a hashmap is an array, it stores the capacity and length before the returned pointer, along with 2 other pieces of data. An element is used
 /// to represent the "default" or "empty" value to test against when determining whether a bucket is open. The other element is used as a temporary
-/// element to store the key and value so the address of the key can be taken even if it's not an rvalue.
+/// element to store the key and value so the address of the key can be taken even if it's not an rvalue (i.e. A constant like 5).
 ///
 ///      capacity  length   default   temp
 ///     +--------+--------+--------+--------+-------+-------+-------+
@@ -200,56 +200,52 @@ void   *tds_array__realloc              (void *a, size_t asize, size_t n);
 ///                                         \
 ///                                           User pointer
 
-// ---- public -----------------
 
-#define tds_map__head(m)                ((m) - 2)
-#define tds_map__default(m)             (tds_map__head(m)[0])
-#define tds_map__temp(m)                (tds_map__head(m)[1])
-
-#define tds_map_reserve(m, n)           (tds_array_reserve(tds_map__head(m), n + 1))
-#define tds_map_free(m)                 (tds_array_free(tds_map__head(m)))
-#define tds_map_len(m)                  ((m) ? tds_array_len(tds_map__head(m)) : 0)
-#define tds_map_cap(m)                  ((m) ? tds_array_cap(tds_map__head(m)) : 0)
-#define tds_map_default(m, k, v)        ((m) ? ((m)[-1].key = k, (m)[-1].value = v, 0) : 0)
+#define tds_map(K, V)                   struct { K key; V value; }
+#define tds_map_reserve(m, n)           (tds_array_reserve((m) - 2, (n) + 2))
+#define tds_map_free(m)                 (tds_array_free((m) - 2))
+#define tds_map_len(m)                  ((m) ? tds_array_len((m) - 2) : 0)
+#define tds_map_cap(m)                  ((m) ? tds_array_cap((m) - 2) : 0)
+#define tds_load_factor(m)              (tds_map_cap(m) ? ((float)tds_map_len(m) / (float)tds_map_cap(m)) : 1.0f)
+#define tds_map_set_default(m, k, v)    ((m) ? ((m)[-2].key = k, (m)[-2].value = v, 0) : 0)
 
 #define tds_map_ins(m, k, v)\
         do {\
-                /* Double the size of m if it is more than 65% full */\
-                if ((float)tds_map_len(m) / (float)tds_map_cap(m) >= 0.65f) {\
-                        size_t _ocap = tds_map_cap(m);\
-                        tds_array_reserve(m, _ocap ? _ocap * 2 : 2);\
-                        memset(m + _ocap, 0, sizeof *m * (tds_map_cap(m) - _ocap));\
+                if (tds_load_factor(m) >= 0.7f) {\
+                        void *m_new = NULL;\
+                        tds_map_reserve(m, tds_map_cap(m) ? tds_map_cap(m) * 2 : 2);\
+                        tds_map_set_default(m_new, m[-2].key, m[-2].value);\
+                        tds_map_clear(m_new);\
+                        for (size_t tds__var(i) = 0; tds__var(i) < tds_map_cap(m); tds__var(i)++)\
+                                tds_map__ins(m_new, m[tds__var(i)].key, m[tds__var(i)].value);\
+                        m = m_new;\
                 }\
-                tds_map__temp(m).key = k;\
-                tds_map__temp(m).value = v;\
-                size_t _hash = tds_map__hash(&tds_map__temp(m).key, sizeof k);\
-                size_t _i = _hash % tds_map_cap(m);\
-                size_t _j = 0;\
-                while (_hash != tds_map__hash(&m[_i].key, sizeof k) && memcmp(&m[_i], &tds_map__default(m), sizeof *m) != 0) {\
-                        _j = (_j * _j + _j) / 2; /* Guarenteed to reach every bucket if tds_map_cap(m) is a power of 2 */\
-                }\
-                m[_j] = tds_map__temp(m);\
+                tds_map__ins(m, k, v);\
         } while (0)
 
 #define tds_map_del(m, k)\
         do {\
-                tds_map__temp(m).key = k;\
-                size_t _hash = tds_map__hash(&tds_map__temp(m).key, sizeof k);\
-                size_t _i = _hash % tds_map_cap(m);\
-                size_t _j = 0;\
-                while (_hash != tds_map__hash(&m[_i].key, sizeof k) && memcmp(&m[_i], &tds_map__default(m), sizeof *m) != 0) {\
-                        _j = (_j * _j + _j) / 2;\
+                (m)[-1].key = k;\
+                size_t tds__var(hash) = tds_map__hash(&(m)[-1].key, sizeof k);\
+                size_t tds__var(i) = tds__var(hash) % tds_map_cap(m);\
+                for (size_t tds__var(step) = 1;\
+                     (tds__var(hash) != tds_map__hash(&m[tds__var(i)].key, sizeof k) && memcmp(&m[tds__var(i)].key, &m[-1].key) != 0)\
+                        && memcmp(&m[tds__var(i)], &(m)[-2], sizeof *m) != 0;\
+                     tds__var(step)++)\
+                {\
+                        tds__var(i) = (tds__var(i) + tds__var(step)) % tds_map_cap(m);\
                 }\
-                m[_j] = tds_map__default(m);\
+                m[tds__var(i)] = (m)[-2]; /* Mark the slot as empty by setting it to the default value */\
         } while (0)
 
+// TODO: Fix
 #define tds_map_get(m, k)\
-        (m->tmp.key = k, tds_map__get((char *)m, &m->tmp.key, sizeof m->tmp, sizeof k))
+        (m[-2].key = k, tds_map__get((char *)m, &m->tmp.key, sizeof m->tmp, sizeof k))
 
 #define tds_map_clear(m)\
         do {\
-                for (size_t tds__var(i) = 0; tds__var(i) < tds_array_len(m), tds__var(i)++) {\
-                        tds_array_clear(m[tds__var(i)]);\
+                for (size_t tds__var(i) = 0; tds__var(i) < tds_map_cap(m), tds__var(i)++) {\
+                        m[tds__var(i)] = m[-2];\
                 }\
                 tds_array_clear(m);\
         } while (0)
@@ -257,7 +253,7 @@ void   *tds_array__realloc              (void *a, size_t asize, size_t n);
 #define tds_map_foreach(x, m, ...)\
         do {\
                 for (size_t tds__var(i) = 0; tds__var(i) < tds_map_len(m); tds__var(i)++) {\
-                        if (memcmp(&m[tds__var(i)], tds_map__default(m), sizeof *m) == 0) {\
+                        if (memcmp(&m[tds__var(i)], (m)[-2], sizeof *m) == 0) {\
                                 x = m[tds__var(i)].value;\
                                 __VA_ARGS__\
                         }\
@@ -267,7 +263,7 @@ void   *tds_array__realloc              (void *a, size_t asize, size_t n);
 #define tds_map_foreachp(x, m, ...)\
         do {\
                 for (size_t tds__var(i) = 0; tds__var(i) < tds_map_len(m); tds__var(i)++) {\
-                        if (memcmp(&m[tds__var(i)], tds_map__default(m), sizeof *m) == 0) {\
+                        if (memcmp(&m[tds__var(i)], (m)[-2], sizeof *m) == 0) {\
                                 x = &m[tds__var(i)].value;\
                                 __VA_ARGS__\
                         }\
@@ -275,15 +271,50 @@ void   *tds_array__realloc              (void *a, size_t asize, size_t n);
         } while (0)
 
 
-size_t tds_map__indexof(char *data, void *key, size_t ksize, size_t vsize, size_t cap);
+#define tds_map__ins(m, k, v)\
+        do {\
+                (m)[-1].key = k;\
+                (m)[-1].value = v;\
+                size_t tds__var(hash) = tds_map__hash(&(m)[-1].key, sizeof k);\
+                size_t tds__var(i) = tds__var(hash) % tds_map_cap(m);\
+                /* Loop until an empty slot is found (memcmp(m[i], m[-2])), or the key is found (memcmp(m[i].key, k) && hash(m[i].key) == hash(k)) */\
+                for (size_t tds__var(step) = 1;\
+                     (tds__var(hash) != tds_map__hash(&m[tds__var(i)].key, sizeof k) && memcmp(&m[tds__var(i)].key, &m[-1].key) != 0)\
+                        && memcmp(&m[tds__var(i)], &(m)[-2], sizeof *m) != 0;\
+                     tds__var(step)++)\
+                {\
+                        tds__var(i) = (tds__var(i) + tds__var(step)) % tds_map_cap(m); /* Guarenteed to reach every bucket if tds_map_cap(m) is a power of 2 */\
+                }\
+                m[tds__var(i)] = (m)[-1];\
+                if (memcmp(&m[tds__var(i)].key, &m[-1].key) == 0) {\
+                        tds_array__len((m) - 2)++; /* Increase the length only if a new element was added */\
+                }\
+        } while (0)
+
+size_t tds_map__hash(void const *key, size_t n);
 
 
-// ======== Queue ==============================================
+/// ## Sparse Set
 
-#define tds_queue_reserve(q, n) tds_array_reserve(q)
-#define tds_queue_free(q)       tds_array_free(q)
-#define tds_queue_len(q)        tds_array_len(q)
-#define tds_queue_cap(q)        tds_array_cap(q)
+#define tds_sset(T)                     struct { tds_array(size_t) sparse; tds_array(T) dense; }
+#define tds_sset_reserve(s, n)          (tds_array_reserve(s.sparse, n), tds_array_reserve(s.dense, n))
+#define tds_sset_free(s)                (tds_array_free(s.sparse), tds_array_free(s.dense))
+#define tds_sset_cap(s)                 (tds_array_cap(s.dense))
+#define tds_sset_len(s)                 (tds_array_len(s.dense))
+
+#define tds_sset_ins(s, v)              (tds_array_push(s.dense, v), s.sparse[i] = tds_array_len(s.dense) - 1)
+#define tds_sset_del(s, i)
+#define tds_sset_get(s, i)
+
+
+/// ## Sparse Map
+
+#define tds_smap(K, V)                  struct { tds_map(K, size_t) sparse; tds_array(V) dense; }
+#define tds_smap_reserve(s, n)          (tds_map_reserve(s.sparse, n), tds_array_reserve(s.dense, n))
+#define tds_smap_free(s)                (tds_map_free(s.sparse), tds_array_free(s.dense))
+#define tds_smap_cap(s)                 (tds_array_cap(s.dense))
+#define tds_smap_len(s)                 (tds_array_len(s.dense))
+
 
 
 /************************************************************************************************************************************************************
@@ -301,21 +332,21 @@ size_t tds_map__indexof(char *data, void *key, size_t ksize, size_t vsize, size_
 #ifndef __tiny_ds_c__
 #define __tiny_ds_c__
 
-#include <stdlib.h> // realloc
+#include <stdlib.h> // calloc, realloc, free
 #include <stdint.h> // uint64_t
 
 void *tds_array__realloc(void *a, size_t asize, size_t n)
-        if (!a && !n) {
-                return NULL;
+        if (n) {
+                size_t size = n ? n * asize + sizeof(size_t) * 2 : 0;
+                size_t ptr  = a ? calloc(1, size) : realloc((size_t *)a - 2, size);
+                if (ptr) {
+                        *ptr++ = size;
+                        *ptr++ = tds_array_len(a);
+                }
+                return (void *)ptr;
+        } else {
+                free(a);
         }
-
-        size_t size = n ? n * asize + sizeof(size_t) * 2 : 0;
-        size_t *ptr = realloc(a ? (size_t *)a - 2 : NULL, size);
-        if (ptr) {
-                *ptr++ = size;
-                *ptr++ = tds_array_len(a);
-        }
-        return (void *)ptr;
 }
 
 // FNV1a hash
@@ -328,14 +359,30 @@ size_t tds_map__hash(void const *key, size_t n) {
         return hash;
 }
 
-size_t tds_map__indexof(char *data, void *key, size_t ksize, size_t vsize, size_t cap) {
-        size_t hash = tds_map__hash(key, ksize);
-        for (size_t i = hash % cap, c = 0; c < cap; c++, j = ((j + 1) % cap)) {
-                void *k = data + i * (ksize + vsize);
-                if (memcmp(k, key, ksize) == 0 && hash == tds_map__hash(k, ksize) && active) {
-                        return i;
+ssize_t tds_sset_insert_func(ssize_t** indices, void** data, void* val, size_t val_len, ssize_t* ip) {
+        ssize_t idx = -1;
+        while ()
+        for (size_t i = 0; i < tds_array_len(indices); i++) {
+                if (indices[i] == -1) {
+                    idx = i;
+                    break;
                 }
         }
+
+        if (idx == tds_array_len(*indices)) {
+                tds_array_push(*indices, 0);
+                idx = tds_array_len(*indices) - 1;
+        }
+
+        // Push data to array
+        tds_array_push
+        gs_dyn_array_push_data(data, val, val_len);
+
+        // Set data in indices
+        ssize_t bi = tds_array_len(*data) - 1;
+        gs_dyn_array_set_data_i(indices, &bi, sizeof(ssize_t), idx);
+
+        return idx;
 }
 
 
