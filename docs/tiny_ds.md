@@ -102,7 +102,7 @@ array[1] = 15.0f;
 Looping through an array can be done with a regular for loop by testing against `tds_array_len(array)`, or by using the `tds_array_foreach` macro.
 ```c
 // Normal for loop
-for (size_t i = 0; i < tds_array_len(array); i++) {
+for (int i = 0; i < tds_array_len(array); i++) {
         printf("%d\n", array[i]);
 }
 
@@ -134,15 +134,17 @@ tds_array_foreach(T it, T *array, ...);
 #### Description
 A generic hashmap implementation. A hashmap is really a specialized array, where the array type is a struct that has a key and value field.
 Since a hashmap is an array, it stores the capacity and length before the returned pointer, along with 2 other pieces of data. An element is used
-to represent the "default" or "empty" value to test against when determining whether a bucket is open. The other element is used as a temporary
-element to store the key and value so the address of the key can be taken even if it's not an rvalue.
+to represent the "default" or "empty" value to test against when determining whether a slot is empty. The other element is used as a temporary
+element to store the key and value so the address can be taken even if it's not an rvalue (i.e. A constant like 5 or a string like "Hello world").
 
      capacity  length   default   temp
-    +--------+--------+--------+--------+-------+-------+-------+
-    |   -4   |   -3   |   -2   |   -1   |   0   |   1   |  ...  |
-    +--------+--------+--------+--------+-------+-------+-------+
-                                        \
-                                          User pointer
+    +--------+--------+--------+--------+-------+-------+-------+-------+
+    |   -4   |   -3   |   -2   |   -1   |   0   |   1   |   2   |  ...  |
+    +--------+--------+--------+--------+-------+-------+-------+-------+
+    |   array header  |    map header   |\
+                                           User pointer
+## Sparse Set
+## Sparse Map
 ## License
 This software is available under 2 licenses -- choose whichever you prefer.
 

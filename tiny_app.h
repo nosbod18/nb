@@ -257,17 +257,17 @@ typedef union tapp_event {
         tapp_key_event          key;
 } tapp_event;
 
-typedef void (*tapp_init_callback)(void);
+typedef bool (*tapp_init_callback)(void);
 typedef void (*tapp_event_callback)(tapp_event const *event);
-typedef void (*tapp_update_callback)(double dt);
+typedef void (*tapp_tick_callback)(double dt);
 typedef void (*tapp_quit_callback)(void);
 
 typedef struct tapp_desc {
-        tapp_window_desc window;
-        tapp_init_callback on_init;
-        tapp_event_callback on_event;
-        tapp_update_callback on_update;
-        tapp_quit_callback on_quit;
+        tapp_window_desc        window;
+        tapp_init_callback      on_init;
+        tapp_event_callback     on_event;
+        tapp_tick_callback      on_tick;
+        tapp_quit_callback      on_quit;
 } tapp_desc;
 
 // }}}
@@ -292,18 +292,18 @@ double          tapp_get_time                   (void);
 
 bool            tapp_init                       (tapp_desc const *desc);
 void            tapp_quit                       (void);
+void            tapp_poll_events                (tapp_event_callback callback);
 
 tapp_window    *tapp_window_create              (tapp_window_desc const *desc);
 void            tapp_window_delete              (tapp_window *window);
-void            tapp_window_poll_events         (tapp_window const *window, tapp_event_callback callback);
 void            tapp_window_get_pos             (tapp_window const *window, int *x, int *y);
 void            tapp_window_set_pos             (tapp_window *window, int x, int y);
 void            tapp_window_get_size            (tapp_window const *window, int *w, int *h);
 void            tapp_window_set_size            (tapp_window *window, int w, int h);
 bool            tapp_window_get_visible         (tapp_window const *window);
-void            tapp_window_set_visible         (tapp_window const *window, bool visible);
+void            tapp_window_set_visible         (tapp_window *window, bool visible);
 bool            tapp_window_get_should_close    (tapp_window const *window);
-void            tapp_window_set_should_close    (tapp_window const *window, bool should_close);
+void            tapp_window_set_should_close    (tapp_window *window, bool should_close);
 void            tapp_window_set_title           (tapp_window *window, char const *title);
 
 // }}}
@@ -454,7 +454,7 @@ int tapp__translate_key_x11(int key) {
 }
 
 // TODO
-void tapp_window__poll_events_x11(tapp_window const *window, tapp_event_callback callback) {
+void tapp_window__poll_events_x11(tapp_event_callback callback) {
         (void)window;
         (void)callback;
 }
@@ -644,10 +644,9 @@ void tapp_window__delete_cocoa(tapp_window *window) {
         } // autoreleasepool
 }
 
-void tapp_window__poll_events_cocoa(tapp_window const *window, tapp_event_callback callback) {
+void tapp_window__poll_events_cocoa(tapp_event_callback callback) {
         @autoreleasepool {
 
-        (void)window; // TODO
         (void)callback; // TODO
 
         NSEvent* event = nil;
@@ -709,18 +708,18 @@ void tapp_window_set_title(tapp_window *window, char const *title) {
 // }}}
 // {{{ Init / Quit
 
-inline void tapp__default_on_init   (void)                {}
-inline void tapp__default_on_event  (tapp_event const *)  {}
-inline void tapp__default_on_update (double)              {}
-inline void tapp__default_on_quit   (void)                {}
+inline bool tapp__default_on_init  (void)                {}
+inline void tapp__default_on_event (tapp_event const *)  {}
+inline void tapp__default_on_tick  (double)              {}
+inline void tapp__default_on_quit  (void)                {}
 
 bool tapp_init(tapp_desc const *desc) {
         _tapp.desc = *desc;
 
-        if (!_tapp.desc.on_init)   { _tapp.desc.on_init   = tapp__default_on_init; }
-        if (!_tapp.desc.on_event)  { _tapp.desc.on_event  = tapp__default_on_event; }
-        if (!_tapp.desc.on_update) { _tapp.desc.on_update = tapp__default_on_update; }
-        if (!_tapp.desc.on_quit)   { _tapp.desc.on_quit   = tapp__default_on_quit; }
+        if (!_tapp.desc.on_init)  { _tapp.desc.on_init  = tapp__default_on_init;  }
+        if (!_tapp.desc.on_event) { _tapp.desc.on_event = tapp__default_on_event; }
+        if (!_tapp.desc.on_tick)  { _tapp.desc.on_tick  = tapp__default_on_tick;  }
+        if (!_tapp.desc.on_quit)  { _tapp.desc.on_quit  = tapp__default_on_quit;  }
 
 #if defined(TAPP_USE_X11)
         return tapp__init_x11();
@@ -736,7 +735,7 @@ void tapp_quit(void) {
         tapp_quit_cocoa();
 #endif
         tapp_window_delete(tapp_get_main_window());
-        memset(&_tapp, 0, sizeof _tapp);
+        _tapp = (_tapp){0};
 }
 
 // }}}
@@ -774,16 +773,15 @@ void tapp_window_delete(tapp_window *window) {
         free(window);
 }
 
-void tapp_window_poll_events(tapp_window const *window, tapp_event_callback callback) {
-        assert(window);
+void tapp_window_poll_events(tapp_event_callback callback) {
 #if defined(TAPP_USE_X11)
-        tapp_window__poll_events_x11(window, callback);
+        tapp_window__poll_events_x11(callback);
 #elif defined(TAPP_USE_COCOA)
-        tapp_window__poll_events_cocoa(window, callback);
+        tapp_window__poll_events_cocoa(callback);
 #endif
 }
 
-void tapp_window_get_pos(tapp_window *window, int *x, int *y) {
+void tapp_window_get_pos(tapp_window const *window, int *x, int *y) {
         assert(window);
         if (x) { *x = window->desc.x; }
         if (y) { *y = window->desc.y; }
@@ -802,7 +800,7 @@ void tapp_window_set_pos(tapp_window *window, int x, int y) {
         window->desc.y = y;
 }
 
-void tapp_window_get_size(tapp_window *window, int *w, int *h) {
+void tapp_window_get_size(tapp_window const *window, int *w, int *h) {
         assert(window);
         if (w) { *w = window->desc.width; }
         if (h) { *h = window->desc.height; }
@@ -821,7 +819,7 @@ void tapp_window_set_size(tapp_window *window, int w, int h) {
         window->desc.height = h;
 }
 
-bool tapp_window_get_visible(tapp_window *window) {
+bool tapp_window_get_visible(tapp_window const *window) {
         assert(window);
         return (window->desc.flags >> TAPP_WINDOW_FLAG_VISIBLE) & 1U;
 }
@@ -840,7 +838,7 @@ void tapp_window_set_visible(tapp_window *window, bool visible) {
         }
 }
 
-bool tapp_wwindow_get_should_close(tapp_window *window) {
+bool tapp_wwindow_get_should_close(tapp_window const *window) {
         assert(window);
         return window->should_close;
 }
@@ -888,7 +886,11 @@ int main(int argc, char **argv) {
                 return -1;
         }
 
-        _tapp.desc.on_init();
+        if (!_tapp.desc.on_init()) {
+                TAPP_LOG("Error on initialization, exiting...");
+                tapp_quit();
+                return -1;
+        }
 
         double last = tapp_get_time();
         while (!tapp_get_should_quit()) {
@@ -897,8 +899,8 @@ int main(int argc, char **argv) {
                 double dt = now - last;
                 last = now;
 
-                _tapp.desc.on_update(dt);
-                tapp_window_poll_events(tapp_get_main_window(), _tapp.desc.on_event);
+                _tapp.desc.on_tick(dt);
+                tapp_window_poll_events(_tapp.desc.on_event);
         }
 
         _tapp.desc.on_quit();
