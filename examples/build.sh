@@ -1,7 +1,6 @@
 #!/bin/bash
 set -e
 
-# Setup
 CFLAGS="-std=c99 -Wall -Wextra -Wpedantic -Werror -g -DDEBUG"
 
 if [ "$(uname -s)" == "Linux" ]; then
@@ -12,7 +11,6 @@ elif [ "$(uname -s)" == "Darwin" ]; then
         LFLAGS="-framework Cocoa"
 fi
 
-# Compile
 pushd $(dirname $0) 2>&1 > /dev/null
 
 mkdir -p bin

@@ -11,7 +11,7 @@ tgfx_program  *prg;
 tgfx_pipeline *pip;
 tm_float2      rot;
 
-void init(void) {
+bool init(void) {
         float const vertices[] = {
                 -1.0f, -1.0f, -1.0f,   1.0f, 0.0f, 0.0f, 1.0f, // North
                  1.0f, -1.0f, -1.0f,   1.0f, 0.0f, 0.0f, 1.0f,
@@ -90,9 +90,11 @@ void init(void) {
                 .program = prg,
                 .index_type = TGFX_INDEX_TYPE_UINT16,
         });
+
+        return true;
 }
 
-void update(double dt) {
+void tick(double dt) {
         rot[0] += 1.0f * dt;
         rot[1] += 2.0f * dt;
 
@@ -101,7 +103,7 @@ void update(double dt) {
         tm_float4x4_rotate_y(rym, rot[1]);
 
         int w, h;
-        tapp_window_get_size(tapp_get_main_window(), &w, &h);
+        tapp_get_size(&w, &h);
 
         tm_float4x4_perspective(proj, 60.0f, (float)w / (float)h, 0.01f, 10.0f);
         tm_float4x4_lookat(view, (tm_float3){0.0f, 1.5f, 6.0f}, (tm_float3){0}, (tm_float3){0.0f, 1.0f, 0.0f});
@@ -130,9 +132,9 @@ void quit(void) {
 
 tapp_desc tapp_main(int argc, char **argv) {
         return (tapp_desc){
-                .window.title   = "tapp | Cube",
-                .on_init        = init,
-                .on_update      = update,
-                .on_quit        = quit
+                .window.title = "tapp | Cube",
+                .on_init      = init,
+                .on_tick      = tick,
+                .on_quit      = quit
         };
 }
