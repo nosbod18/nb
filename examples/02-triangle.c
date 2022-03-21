@@ -8,7 +8,7 @@ tgfx_buffer   *cbo;
 tgfx_program  *prg;
 tgfx_pipeline *pip;
 
-void init(void) {
+bool init(void) {
         float const vertices[] = {
                  0.0f,  0.5f,  1.0f, 0.0f, 0.0f, 1.0f,
                  0.5f, -0.5f,  0.0f, 1.0f, 0.0f, 1.0f,
@@ -50,9 +50,11 @@ void init(void) {
                 },
                 .program = prg,
         });
+
+        return true;
 }
 
-void update(double dt) {
+void tick(double dt) {
         tgfx_pass_begin(cbo, &(tgfx_pass_desc){0});
                 tgfx_buffer_bind(cbo, vbo);
                 tgfx_pipeline_bind(cbo, pip);
@@ -70,9 +72,9 @@ void quit(void) {
 
 tapp_desc tapp_main(int argc, char **argv) {
         return (tapp_desc){
-                .window.title   = "tapp | Triangle",
-                .on_init        = init,
-                .on_update      = update,
-                .on_quit        = quit
+                .window.title = "tapp | Triangle",
+                .on_init      = init,
+                .on_tick      = tick,
+                .on_quit      = quit
         };
 }
