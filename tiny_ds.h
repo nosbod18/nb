@@ -1,10 +1,17 @@
 /// # tiny_ds.h
-/// A collection of generic data structures
+/// A collection of generic data structures. Since C has no notion of a template and the like, the generic functionality in this library comes from
+/// the use of macros, and with macros come no type checking and hard to debug errors. Most of the macros that could cause an error try to do some
+/// checking and make sure the structure has enough capacity and everything, but some care is still required.
+///
+/// Since this is a single header library, the private api will be available to use in the file where `TDS_IMPL` or `TINY_IMPL` is defined.
+/// While it is not strictly forbidden to use this internal api, it is dicouraged and the internal functions and macros have two underscores in their name.
+/// If you would like to use them, go ahead, but know that they do not have any of what little checking the public api provides.
 
 #ifndef __tiny_ds_h__
 #define __tiny_ds_h__
 
 #include <string.h> // memmove, memcpy
+#include <stdint.h> // uint64_t
 
 #ifndef TDSAPI
         #ifdef TDS_IMPL_STATIC
@@ -30,10 +37,6 @@
 ///     +--------+--------+-------+-------+-------+-------+
 ///                        \
 ///                          User pointer
-///
-/// The array API functions are all macros, and with macros come no type checking and hard to debug errors, but they are the only way to do
-/// type-agnostic implementations in C. The user will just have to be careful with what they pass as arguments to these macros. Most of
-/// them try to do some checking to see if the passed in array is `NULL` to avoid segmentation faults, but some care is still required.
 ///
 /// ### Creating / Freeing
 /// There is no `init` or `create` macro for an array, because the macros for insertion check to see if `a` is `NULL` and allocate space if it is.
@@ -125,33 +128,32 @@
 /// }
 ///
 /// // Notice how the curly brackets are inside the macro as a parameter
-/// tds_array_foreach(int i, array, {
-///         printf("%d\n", i);
+/// tds_array_foreach(int x, array, {
+///         printf("%d\n", x);
 /// });
 ///
-/// // The curly brackets are not required
-/// tds_array_foreach(int i, array,
-///         printf("%d\n", i);
-/// );
-///
-/// // The "iterator" can be any type
-/// tds_array_foreach(my_custom_type c, array, {
-///         print_my_custom_type(c);
+/// // The "iterator" type has to match the array type
+/// tds_array_foreach(my_custom_type c, my_custom_type_array, {
+///         c.field += 1;
 /// });
+///
+/// // A foreach loop for pointers is also provided which can be used to update the array values themselves
+/// tds_array_foreachp(int *x, array, {
+///         *x += 5;
+/// })
 /// ```
 ///
 /// #### Macros
 /// ```c
-/// T *tds_begin(T *a);
-/// T *tds_end(T *a);
-///
 /// tds_array_foreach(T it, T *array, ...);
+/// tds_array_foreachp(T *it, T *array, ...);
 /// ```
 
 #define tds_array(T)                    T *
 
 #define tds_array_reserve(a, n)         (tds_array__ensure(a, n))
 #define tds_array_free(a)               ((a) = tds_array__realloc(a, 0, 0))
+#define tds_array_dup(dest, a)          (sizeof *(dest) == sizeof *(a) ? (tds_array_reserve(dest, tds_arra_len(a)), memcpy(dest, a, tds_array_len(a) * sizeof *dest)), 0 : 0)
 #define tds_array_cap(a)                ((a) ? tds_array__cap(a) : 0)
 #define tds_array_len(a)                ((a) ? tds_array__len(a) : 0)
 
@@ -166,11 +168,6 @@
 #define tds_array_pop(a)                (*tds_array_popn(a, 1))
 #define tds_array_popn(a, n)            (tds_array_deln(a, tds_array_len(a) - (n), n), &(a)[tds_array_len(a) - 1])
 #define tds_array_clear(a)              ((a) ? (tds_array__len(a) = 0, 0) : 0)
-
-#define tds_array_begin(a)              (a)
-#define tds_array_end(a)                ((a) + tds_array_len(a) - 1)
-#define tds_array_first(a)              (*tds_array_begin(a)) // Assumes a is valid
-#define tds_array_last(a)               (*tds_array_end(a)) // Assumes a is valid
 
 #define tds_array_foreach(x, a, ...)\
         do {\
@@ -211,7 +208,6 @@ TDSAPI void *tds_array__realloc         (void *a, int asize, int n);
 ///                                            User pointer
 
 #define tds_map(K, V)                   struct { K key; V value; }
-
 #define tds_map_reserve(m, n)           (tds_array_reserve(tds_map__head(m), (n) + 2))
 #define tds_map_free(m)                 (tds_array_free(tds_map__head(m)))
 #define tds_map_len(m)                  ((m) ? tds_array_len(tds_map__head(m)) : 0)
@@ -227,15 +223,15 @@ TDSAPI void *tds_array__realloc         (void *a, int asize, int n);
                 tds_array_clear(m);\
         } while (0)
 
-// TODO: Definitely need to fix this, return the value at the actual index instead of tds_map__temp
-#define tds_map_get(m, k)               (tds_map__temp(m).key = k, tds_map__get(m, sizeof *m, &tds_map__temp(m).key, sizeof k), tds_map__temp(m).value)
+#define tds_map_gets(m, k)              (tds_map__temp(m).key = k, m[tds_map__get(m, sizeof *m, &tds_map__temp(m).key, sizeof k, (((char *)&(m)[0].key) - (char *)(m)))])
+#define tds_map_get(m, k)               (tds_map_gets(m, k).value)
 #define tds_map_ins(m, k, v)            (tds_map__ensure(m), tds_map__ins(m, k, v))
-#define tds_map_del(m, k)               (tds_map_get(m, k) = tds_map__default(m))
+#define tds_map_del(m, k)               (tds_map_gets(m, k) = tds_map__default(m), tds_array__len(m)--)
 
 #define tds_map_foreach(x, m, ...)\
         do {\
                 for (int tds__var(i) = 0; tds__var(i) < tds_map_len(m); tds__var(i)++) {\
-                        if (memcmp(&m[tds__var(i)], tds_map__default(m), sizeof *m) == 0) {\
+                        if (memcmp(&m[tds__var(i)], &tds_map__default(m), sizeof *m) != 0) {\
                                 x = m[tds__var(i)].value;\
                                 __VA_ARGS__\
                         }\
@@ -245,7 +241,7 @@ TDSAPI void *tds_array__realloc         (void *a, int asize, int n);
 #define tds_map_foreachp(x, m, ...)\
         do {\
                 for (int tds__var(i) = 0; tds__var(i) < tds_map_len(m); tds__var(i)++) {\
-                        if (memcmp(&m[tds__var(i)], tds_map__default(m), sizeof *m) == 0) {\
+                        if (memcmp(&m[tds__var(i)], &tds_map__default(m), sizeof *m) != 0) {\
                                 x = &m[tds__var(i)].value;\
                                 __VA_ARGS__\
                         }\
@@ -281,14 +277,14 @@ TDSAPI void *tds_array__realloc         (void *a, int asize, int n);
                 }\
         } while (0)
 
-#define TDS_MAP__INDEXOF_DEFAULT        0
-#define TDS_MAP__INDEXOF_TEMP           1
+#define TDS_MAP__INDEXOF_DEFAULT        -2
+#define TDS_MAP__INDEXOF_TEMP           -1
 
 #define tds_map__head(m)                ((m) ? tds_map__head(m) : NULL)
-#define tds_map__default(m)             (tds_map__head(m)[TDS_MAP__INDEXOF_DEFAULT]) // Assumes m is valid
-#define tds_map__temp(m)                (tds_map__head(m)[TDS_MAP__INDEXOF_TEMP]) // Assumes m is valid
+#define tds_map__default(m)             ((m)[TDS_MAP__INDEXOF_DEFAULT])
+#define tds_map__temp(m)                ((m)[TDS_MAP__INDEXOF_TEMP])
 
-TDSAPI int tds_map__hash                (void const *key, int n);
+TDSAPI uint64_t tds_map__hash           (void const *key, int n);
 TDSAPI int tds_map__get                 (void *m, int msize, void *k, int ksize);
 
 
@@ -311,8 +307,9 @@ TDSAPI int tds_map__get                 (void *m, int msize, void *k, int ksize)
                         for (int tds__var(j) = 0; tds__var(j) < tds_array_len((s).sparse); tds__var(j)++) {\
                                 if ((s).sparse[tds__var(j)] == tds_array_len((s).dense) - 1) {\
                                         tds_array_delswap((s).dense, (s).sparse[(i)]); /* Delete data */\
-                                        (s).sparse[tds__var(j)] = (s).sparse[(i)]; /* Update handles */\
-                                        (s).sparse[(i)] = -1; /* Invalidate deleted data's handle */\
+                                        (s).sparse[tds__var(j)] = (s).sparse[(i)]; /* Swap handles */\
+                                        (s).sparse[(i)] = -1; /* Invalidate deleted handle */\
+                                        tds_array__len((s).sparse)--;\
                                 }\
                         }\
                 }\
@@ -361,21 +358,23 @@ TDSAPI int tds_sset__ins                (void *dense, int *sparse, void *v, int 
 
 
 TDSAPI void *tds_array__realloc(void *a, int asize, int n)
+        int *ptr = NULL;
         if (n) {
                 int size = n ? n * asize + sizeof(int) * 2 : 0; // Round up to next power of 2?
-                int ptr  = a ? calloc(1, size) : realloc((int *)a - 2, size);
+                ptr = a ? calloc(1, size) : realloc((int *)a - 2, size);
                 if (ptr) {
                         *ptr++ = size;
                         *ptr++ = tds_array_len(a);
                 }
-                return (void *)ptr;
         } else {
                 free(a);
         }
+
+        return (void *)ptr;
 }
 
 // FNV1a hash
-TDSAPI int tds_map__hash(void const *key, int n) {
+TDSAPI uint64_t tds_map__hash(void const *key, int n) {
         uint64_t hash = 14695981039346656037UL;
         for (unsigned char const *p = (unsigned char const *)key; n; n--, p++) {
                 hash ^= (uint64_t)(*p);
@@ -384,23 +383,20 @@ TDSAPI int tds_map__hash(void const *key, int n) {
         return hash;
 }
 
-TDSAPI int tds_map__get(void *m, int msize, void *k, int ksize) {
-        // Copy default value into temp slot
-        memcpy((char *)m - (msize * TDS_MAP__INDEXOF_TEMP), (char *)m - (msize * TDS_MAP__INDEXOF_DEFAULT), msize);
-
-        int hash = tds_map__hash(key, ksize);
-        int cap  = tds_map_cap(m);
-        int i    = hash & (cap - 1); // Faster than hash % cap and is the same because tds_map_cap(m) will always be a power of 2
+TDSAPI int tds_map__get(void *m, int msize, void *k, int ksize, int koff) {
+        uint64_t hash = tds_map__hash(key, ksize);
+        int cap = tds_map_cap(m);
+        int i = hash & (cap - 1); // same as hash % cap because tds_map_cap(m) will always be a power of 2
 
         for (int step = 1, c = 0; c < cap; c++, i = (i + step++) & (cap - 1)) {
                 void *cur = (char *)m + i * msize;
-                if (memcmp(cur, k, ksize) == 0 && hash == tds_map__hash(cur, ksize)) {
-                        memcpy((char *)m - (msize * TDS_MAP__INDEXOF_TEMP), cur, msize);
-                        break;
+                void *key = (char *)cur + koff;
+                if (memcmp(key, k, ksize) == 0 && hash == tds_map__hash(key, ksize)) {
+                        return i;
                 }
         }
 
-        return i;
+        return TDS_MAP__INDEXOF_DEFAULT;
 }
 
 TDSAPI int tds_sset__ins(void *dense, int *sparse, void *v, int vsize) {
@@ -411,7 +407,7 @@ TDSAPI int tds_sset__ins(void *dense, int *sparse, void *v, int vsize) {
         }
 
         tds_array__ensure(dense, 1);
-        memcpy(&((char *)dense)[tds_array_len(dense) * dsize], v, vsize);
+        memcpy(&((char *)dense)[tds_array_len(dense) * dsize], v, vsize); // TODO: implement some sort of tds_array_pushbytes?
         sparse[i] = tds_array_len(dense);
 
         tds_array__len(dense)++;

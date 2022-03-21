@@ -1,10 +1,19 @@
 # tiny_ds.h
-A collection of generic data structures
-## Array
+A collection of generic data structures.
 
-#### Description
-The array is the base of all `tiny_ds.h` structures. A simple "stretchy buffer" implementation, it keeps track of its current capacity
-and number of elements so it knows when to allocate more space once it gets full. Internally, the array actually looks like this:
+C has no notion of a template and the like, the generic functionality in this library comes from
+the use of macros, and with macros come no type checking and hard to debug errors. Most of the macros that could cause an error try to do some
+checking and make sure the structure has enough capacity and everything, but some care is still required.
+
+Since this is a single header library, the private API will be available to use in the file where `TDS_IMPL` or `TINY_IMPL` is defined.
+While it is not strictly forbidden to use this internal API, it is discouraged and the internal functions and macros have been marked as such with
+two underscores in their name. If you would like to use them, go ahead, but know that they do not have any of what little checking the public API provides.
+
+## Array
+### Description
+The array is the base of all `tiny_ds.h` structures. A simple "stretchy buffer" implementation, an array is a plain C pointer with a bit of metadata placed
+just before the returned pointer. The two pieces of data kept are the array's current capacity and length so it knows when to allocate more space when needed.
+Under the hood, an array looks like this:
 
      capacity  length
     +--------+--------+-------+-------+-------+-------+
@@ -13,9 +22,7 @@ and number of elements so it knows when to allocate more space once it gets full
                        \
                          User pointer
 
-The array API functions are all macros, and with macros come no type checking and hard to debug errors, but they are the only way to do
-type-agnostic implementations in C. The user will just have to be careful with what they pass as arguments to these macros. Most of
-them try to do some checking to see if the passed in array is `NULL` to avoid segmentation faults, but some care is still required.
+The capacity and length are both represented as an `int`, so the metadata takes `sizeof(int) * 2` bytes, which is 8 bytes on most systems.
 
 ### Creating / Freeing
 There is no `init` or `create` macro for an array, because the macros for insertion check to see if `a` is `NULL` and allocate space if it is.
@@ -25,10 +32,13 @@ There is no `init` or `create` macro for an array, because the macros for insert
 // Define a array of type int like this
 int *array = NULL;
 
+// or with the convinience macro
+tds_array(int) array = NULL;
+
 // Reserve 32 spaces in the array
 tds_array_reserve(array, 32);
 
-// Free the array when it's no longer needed
+// Make sure to free the array when it's no longer needed
 tds_array_free(array);
 ```
 
@@ -48,11 +58,14 @@ int *array = NULL;
 int to_insert[5] = {1, 2, 3, 4, 5};
 
 int *ptr = tds_array_pushn(array, 5);
-for (int i = 0; i < 5; i++)
+for (int i = 0; i < 5; i++) {
         ptr[i] = to_insert[i];
-// or memcpy(ptr, to_insert, sizeof to_insert);
+}
+
+// or
+memcpy(ptr, to_insert, sizeof to_insert);
 ```
-`tds_array_del{n}` deletes elements in an array the way an `std::vector` does in C++, shifting the other elements down and overwriting the
+`tds_array_del{n}` deletes elements in an array the way an `std::vector` does in C++, shifting the other elements and overwriting the
 deleted element with the one from the next index. This keeps the array tightly packed with no gaps and keeps the order. `tds_array_delswap`
 deletes an element by swapping it with the last element in the array then popping the last element off the array, similar to the "swap and pop" idiom
 in C++. This allows an element to be deleted in O(1) time, but changes the order of the array. `tds_array_delswap` is much faster than
@@ -79,7 +92,7 @@ void  tds_array_push(T *a);
 void  tds_array_deln(T *a, int index, int n);
 void  tds_array_del(T *a, int index);
 void  tds_array_delswap(T *a, int index);
-T    *tds_array_popn(t *a, int n);
+T    *tds_array_popn(T *a, int n);
 T     tds_array_pop(T *a);
 void  tds_array_clear(T *a);
 ```
@@ -99,7 +112,8 @@ Array elements can also be set like a normal array.
 array[1] = 15.0f;
 ```
 
-Looping through an array can be done with a regular for loop by testing against `tds_array_len(array)`, or by using the `tds_array_foreach` macro.
+Looping through an array can be done with a regular for loop by testing against `tds_array_len(array)`, or by using the `tds_array_foreach`
+and `tds_array_foreachp` macros.
 ```c
 // Normal for loop
 for (int i = 0; i < tds_array_len(array); i++) {
@@ -107,35 +121,33 @@ for (int i = 0; i < tds_array_len(array); i++) {
 }
 
 // Notice how the curly brackets are inside the macro as a parameter
-tds_array_foreach(int i, array, {
-        printf("%d\n", i);
+tds_array_foreach(int x, array, {
+        printf("%d\n", x);
 });
 
-// The curly brackets are not required
-tds_array_foreach(int i, array,
-        printf("%d\n", i);
-);
-
-// The "iterator" can be any type
-tds_array_foreach(my_custom_type c, array, {
-        print_my_custom_type(c);
+// The "iterator" type has to match the array type
+tds_array_foreach(my_custom_type c, my_custom_type_array, {
+        do_some_work(c);
 });
+
+// Loop over pointers to each array element
+tds_array_foreachp(int *x, array, {
+        *x += 5;
+})
 ```
 
 #### Macros
 ```c
-T *tds_begin(T *a);
-T *tds_end(T *a);
-
 tds_array_foreach(T it, T *array, ...);
+tds_array_foreachp(T *it, T *array, ...);
 ```
 ## Map
 
 #### Description
-A generic hashmap implementation. A hashmap is really a specialized array, where the array type is a struct that has a key and value field.
-Since a hashmap is an array, it stores the capacity and length before the returned pointer, along with 2 other pieces of data. An element is used
-to represent the "default" or "empty" value to test against when determining whether a slot is empty. The other element is used as a temporary
-element to store the key and value so the address can be taken even if it's not an rvalue (i.e. A constant like 5 or a string like "Hello world").
+A hashmap is really a specialized array, where the array type is a struct that has a key and value field. Since a hashmap is an array, it stores the
+capacity and length before the returned pointer, along with 2 other pieces of data. An element is used to represent the "default" or "empty" value
+to test against when determining whether a slot is empty. The other element is used as a temporary element to store the key and value so the address
+can be taken even if it's not an rvalue (i.e. A constant like `5` or a string like `"Hello world"`).
 
      capacity  length   default   temp
     +--------+--------+--------+--------+-------+-------+-------+-------+

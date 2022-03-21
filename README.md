@@ -13,9 +13,9 @@ is provided for each library under the `docs/` directory (well, only `tiny_ds.h`
 **Total LoC (Lines of Code):** 2272
 
 ## Features
-- No dependencies other than the C Standard Library
+- No dependencies other than system headers
 - Each library is completely independent from each other
-- Easy to understand APIs
+- Easy to understand API (I hope :))
 
 ## Minimal example
 Uses `tiny_app.h` to open a window and enter the main loop until the window is closed.
