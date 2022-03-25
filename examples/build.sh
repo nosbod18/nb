@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-CFLAGS="-std=c99 -Wall -Wextra -Wpedantic -Werror -g -DDEBUG"
+CFLAGS="-std=c99 -Wall -Wextra -Wpedantic -Werror -g -I.."
 
 if [ "$(uname -s)" == "Linux" ]; then
         CFLAGS="$CFLAGS -D_GNU_SOURCE"
@@ -14,7 +14,7 @@ fi
 pushd $(dirname $0) 2>&1 > /dev/null
 
 mkdir -p bin
-FILES=${1:-$(ls *.c)}
+FILES=${1:-$(ls tiny_{app,ds,gfx,math}/*.c)}
 
 for f in $FILES; do
         cmd="gcc $CFLAGS $f -o bin/$(basename $f .c) $LFLAGS"
