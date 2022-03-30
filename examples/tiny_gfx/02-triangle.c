@@ -1,7 +1,7 @@
 #define TAPP_IMPL
 #define TGFX_IMPL
-#include "../tiny_app.h"
-#include "../tiny_gfx.h"
+#include "tiny_app.h"
+#include "tiny_gfx.h"
 
 tgfx_buffer   *vbo;
 tgfx_buffer   *cbo;
@@ -72,9 +72,8 @@ void quit(void) {
 
 tapp_desc tapp_main(int argc, char **argv) {
         return (tapp_desc){
-                .window.title = "tapp | Triangle",
-                .on_init      = init,
-                .on_tick      = tick,
-                .on_quit      = quit
+                .on_init = init,
+                .on_tick = tick,
+                .on_quit = quit
         };
 }

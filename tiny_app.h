@@ -84,7 +84,7 @@ typedef enum tapp_key {
         TAPP_KEY_UNDERSCORE             = '_',
         TAPP_KEY_GRAVE_ACCENT           = '`',
         TAPP_KEY_LEFT_CURLY_BRACE       = '{',
-        TAPP_KEY_VERTICALbAR            = '|',
+        TAPP_KEY_VERTICALBAR            = '|',
         TAPP_KEY_RIGHT_CURLY_BRACE      = '}',
         TAPP_KEY_TILDA                  = '~',
         TAPP_KEY_DELETE                 = 0x7f,

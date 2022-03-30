@@ -1,55 +1,67 @@
 #define TAPP_IMPL
 #define TECS_IMPL
-#include "../tiny_app.h"
-#include "../tiny_ecs.h"
-
+#include "tiny_app.h"
+#include "tiny_ecs.h"
 #include <stdio.h>
 
 typedef struct {
-        float x, y;
+        double x, y;
 } position_t, velocity_t;
 
-tecs_world *world;
+tecs_world world;
+tecs_id cpos, cvel;
 
-void move(tecs_view view, double dt) {
-        position_t *p = tecs_view_get(view, position_t, 0);
-        velocity_t *v = tecs_view_get(view, velocity_t, 1);
+/*
+
+void move(double dt) {
+        world.query([&](position_t &p, velocity_t const &v) {
+                p.x += v.x * dt;
+                p.y += v.y * dt;
+        });
+}
+
+*/
+
+void move(double dt) {
+        tecs_view view = tecs_query(&world, 2, cpos, cvel);
+        position_t  *p = view.columns[0];
+        velocity_t  *v = view.columns[1];
 
         for (int i = 0; i < view.count; i++) {
                 p[i].x += v[i].x * dt;
                 p[i].y += v[i].y * dt;
-                printf("entity %lu moved to {.x = %f, .y = %f}\n", view.entities[i], p[i].x, p[i].y);
+                printf("entity %llu moved to {.x = %f, .y = %f}\n", view.entities[i], p[i].x, p[i].y);
         }
 }
 
 bool init(void) {
-        world = tecs_world_create();
-        tecs_component_register(world, position_t);
-        tecs_component_register(world, velocity_t);
-        tecs_system_register(world, move, position_t, velocity_t);
+        if (!tecs_init(&world, 8, 2))
+                return false;
+
+        cpos = tecs_register(&world, sizeof(position_t), 8);
+        cvel = tecs_register(&world, sizeof(velocity_t), 8);
 
         for (int i = 0; i < 8; i++) {
-                tecs_entity e = tecs_entity_create(world);
-                tecs_entity_attach(world, e, position_t, {1.f * i, 1.f * i});
-                tecs_entity_attach(world, e, velocity_t, {1.f * i, 1.f * i});
+                tecs_id e = tecs_new(&world);
+                tecs_add(&world, e, cpos, &(position_t){1.f * i, 1.f * i});
+                tecs_add(&world, e, cvel, &(velocity_t){1.f * i, 1.f * i});
         }
 
         return true;
 }
 
 void tick(double dt) {
-        tecs_world_tick(world, dt);
+        move(dt);
 }
 
 void quit(void) {
-        tecs_world_delete(world);
+        tecs_fini(&world);
 }
 
 tapp_desc tapp_main(int argc, char **argv) {
         return (tapp_desc){
-                .window.title = "tapp | Entity Component System",
-                .on_init      = init,
-                .on_tick      = tick,
-                .on_quit      = quit
+                .on_init = init,
+                .on_tick = tick,
+                .on_quit = quit
         };
 }

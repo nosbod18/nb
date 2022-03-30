@@ -1,5 +1,5 @@
 #define TDS_IMPL
-#include "../../tiny_ds.h"
+#include "tiny_ds.h"
 #include <stdio.h>
 
 typedef struct custom_key_t {

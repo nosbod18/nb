@@ -1,5 +1,5 @@
 #define TDS_IMPL
-#include "../../tiny_ds.h"
+#include "tiny_ds.h"
 #include <stdio.h> // printf
 
 void print_array(int *array) {
@@ -11,7 +11,7 @@ void print_array(int *array) {
 }
 
 int main(void) {
-        tds_array(int) *array = NULL;
+        int *array = NULL;
 
         for (int i = 0; i < 10; i++) {
                 tds_array_push(array, i);
@@ -38,12 +38,13 @@ int main(void) {
         tds_array_del(array, 8);
         tds_array_delswap(array, 0);
 
-        tds_array(int) *other = NULL;
+        int *other = NULL;
         tds_array_dup(other, array);
 
         print_array(other);
 
         int x = tds_array_pop(other);
+        printf("x = %d\n", x);
 
         tds_array_free(array);
         tds_array_push(array, 1);

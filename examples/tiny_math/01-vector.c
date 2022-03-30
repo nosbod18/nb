@@ -1,4 +1,4 @@
-// Notice, `tiny_math.h` is completely header only, no TM_IMPL required
+// Notice, `tiny_math.h` is purely header only, no TM_IMPL required
 #include "tiny_math.h"
 
 int main(void) {
