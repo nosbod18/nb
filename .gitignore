@@ -1,0 +1,6 @@
+# Directories
+.vscode/
+examples/bin/
+
+# Files
+.DS_Store
