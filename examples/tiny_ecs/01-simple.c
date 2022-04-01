@@ -1,31 +1,20 @@
 #define TAPP_IMPL
 #define TECS_IMPL
-#include "tiny_app.h"
-#include "tiny_ecs.h"
+#include "../../tiny_app.h"
+#include "../../tiny_ecs.h"
 #include <stdio.h>
 
 typedef struct {
         double x, y;
 } position_t, velocity_t;
 
-tecs_world world;
+tecs_world *world;
 tecs_id cpos, cvel;
 
-/*
-
 void move(double dt) {
-        world.query([&](position_t &p, velocity_t const &v) {
-                p.x += v.x * dt;
-                p.y += v.y * dt;
-        });
-}
-
-*/
-
-void move(double dt) {
-        tecs_view view = tecs_query(&world, 2, cpos, cvel);
-        position_t  *p = view.columns[0];
-        velocity_t  *v = view.columns[1];
+        tecs_view view = tecs_query(world, cpos, cvel);
+        position_t  *p = view.components[0];
+        velocity_t  *v = view.components[1];
 
         for (int i = 0; i < view.count; i++) {
                 p[i].x += v[i].x * dt;
@@ -34,20 +23,20 @@ void move(double dt) {
         }
 }
 
-bool init(void) {
-        if (!tecs_init(&world, 8, 2))
-                return false;
+int init(void) {
+        if (!(world = tecs_alloc()))
+                return 0;
 
-        cpos = tecs_register(&world, sizeof(position_t), 8);
-        cvel = tecs_register(&world, sizeof(velocity_t), 8);
+        cpos = tecs_create(world);
+        cvel = tecs_create(world);
 
         for (int i = 0; i < 8; i++) {
-                tecs_id e = tecs_new(&world);
-                tecs_add(&world, e, cpos, &(position_t){1.f * i, 1.f * i});
-                tecs_add(&world, e, cvel, &(velocity_t){1.f * i, 1.f * i});
+                tecs_id e = tecs_create(world);
+                tecs_set(world, e, cpos, &(position_t){1.f * i, 1.f * i});
+                tecs_set(world, e, cvel, &(velocity_t){1.f * i, 1.f * i});
         }
 
-        return true;
+        return 1;
 }
 
 void tick(double dt) {
@@ -55,7 +44,7 @@ void tick(double dt) {
 }
 
 void quit(void) {
-        tecs_fini(&world);
+        tecs_free(world);
 }
 
 tapp_desc tapp_main(int argc, char **argv) {

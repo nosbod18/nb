@@ -1,40 +1,7 @@
-/// # tiny_math.h
-/// A header only vector and matrix math library. Depends on `<math.h>` for `sin`, `cos`, `tan`, `sqrt` only.
-///
-/// ## Note
-/// All types defined in this library are nothing more that `typedef`'d arrays, and as such new ones cannot be returned from functions.
-/// An `out` variable must be provided to each function where the result is a vector.
-
-
 #ifndef __tiny_math_h__
 #define __tiny_math_h__
 
 #include <math.h> // sin, cos, tan, sqrt
-
-/// ## Vector
-/// A vector is defined by the type and number of elements it holds. For example, a vector of 3 floats would be `tm_float3`. Generally, a vector
-/// of type T that holds N elements is defined as `tm_TN`.
-///
-/// ### API
-/// ```c
-/// void tm_TN_copy   (tm_TN out, tm_TN a)
-/// void tm_TN_add    (tm_TN out, tm_TN a, tm_TN b)
-/// void tm_TN_sub    (tm_TN out, tm_TN a, tm_TN b)
-/// void tm_TN_mul    (tm_TN out, tm_TN a, tm_TN b)
-/// void tm_TN_div    (tm_TN out, tm_TN a, tm_TN b)
-/// void tm_TN_adds   (tm_TN out, tm_TN a, T b)
-/// void tm_TN_subs   (tm_TN out, tm_TN a, T b)
-/// void tm_TN_muls   (tm_TN out, tm_TN a, T b)
-/// void tm_TN_divs   (tm_TN out, tm_TN a, T b)
-/// T    tm_TN_dot    (tm_TN a, tm_TN b)
-/// T    tm_TN_mag2   (tm_TN a) // Returns the magnitude of `a` squared
-/// T    tm_TN_mag    (tm_TN a)
-/// T    tm_TN_min_val(tm_TN a) // Returns the smallest component of `a`
-/// T    tm_TN_max_val(tm_TN a) // Returns the largest component of `a`
-/// void tm_TN_min    (tm_TN out, tm_TN a, tm_TN b)
-/// void tm_TN_max    (tm_TN out, tm_TN a, tm_TN b)
-/// void tm_TN_norm   (tm_TN out, tm_TN a, tm_TN b)
-/// ```
 
 #define TM_VECTOR(T, N)\
 typedef T tm_##T##N[N];\
@@ -110,12 +77,6 @@ static inline T tm_##T##N##_max_val(tm_##T##N const a) {\
         return max;\
 }\
 
-/// #### Dimension specific functions
-/// ```c
-/// void tm_T2_rotate   (tm_T2 out, tm_T2 a, T degrees)
-/// void tm_T3_cross    (tm_T3 out, tm_T3 a, tm_T3 b)
-/// ```
-
 #define TM_VECTOR_SPECIFIC(T)\
 static inline void tm_##T##2_rotate(tm_##T##2 out, tm_##T##2 const a, T degrees) {\
         T s = sin(degrees * 0.0174533);\
@@ -128,28 +89,6 @@ static inline void tm_##T##3_cross(tm_##T##3 out, tm_##T##3 const a, tm_##T##3 c
         out[1] = a[2] * b[0] - a[0] * b[2];\
         out[2] = a[0] * b[1] - a[1] * b[0];\
 }
-
-/// ## Matrix
-/// A matrix is exactly the same as a vector, except it a two demensional array instead of a one dimensional one. A matrix is named the same way
-/// as a vector with a small change to represent the second dimension, e.g. `float4x4` represents a 4x4 matrix of floats. In general, a matrix of
-/// type T and holds R rows and C columns is defined as `tm_TRxC`.
-///
-/// ### API
-/// ```c
-/// void tm_TRxC_copy   (tm_TRxC out, tm_TRxC a)
-/// void tm_TRxC_add    (tm_TRxC out, tm_TRxC a, tm_TRxC b)
-/// void tm_TRxC_sub    (tm_TRxC out, tm_TRxC a, tm_TRxC b)
-/// void tm_TRxC_mul    (tm_TRxC out, tm_TRxC a, tm_TRxC b)
-/// void tm_TRxC_div    (tm_TRxC out, tm_TRxC a, tm_TRxC b)
-/// void tm_TRxC_adds   (tm_TRxC out, tm_TRxC a, T b)
-/// void tm_TRxC_subs   (tm_TRxC out, tm_TRxC a, T b)
-/// void tm_TRxC_muls   (tm_TRxC out, tm_TRxC a, T b)
-/// void tm_TRxC_divs   (tm_TRxC out, tm_TRxC a, T b)
-/// void tm_TRxC_addn   (tm_TRxC out, int n, tm_TRxC in[]) // These 4 functions operate on `n` matrices passed in as an array
-/// void tm_TRxC_subn   (tm_TRxC out, int n, tm_TRxC in[])
-/// void tm_TRxC_muln   (tm_TRxC out, int n, tm_TRxC in[])
-/// void tm_TRxC_divn   (tm_TRxC out, int n, tm_TRxC in[])
-/// ```
 
 #define TM_MATRIX(T, R, C)\
 typedef T tm_##T##R##x##C[R][C];\
@@ -219,24 +158,6 @@ static inline void tm_##T##R##x##C##_divn(tm_##T##R##x##C out, int n, tm_##T##R#
         for (int _i = 0; _i < n; _i++)\
                 tm_##T##R##x##C##_div(out, out, in[_i]);\
 }\
-
-/// #### Dimension specific functions
-/// ```c
-/// void tm_T3x3_translate      (tm_T3x3 out, T2 t)
-/// void tm_T3x3_rotate         (tm_T3x3 out, T degrees)
-/// void tm_T3x3_scale          (tm_T3x3 out, T2 s)
-/// void tm_T3x3_scale_uni      (tm_T3x3 out, T s)
-/// void tm_T4x4_translate      (tm_T4x4 out, T3 v)
-/// void tm_T4x4_rotate         (tm_T4x4 out, T3 axis, T degrees)
-/// void tm_T4x4_rotate_x       (tm_T4x4 out, T degrees)
-/// void tm_T4x4_rotate_y       (tm_T4x4 out, T degrees)
-/// void tm_T4x4_rotate_z       (tm_T4x4 out, T degrees)
-/// void tm_T4x4_scale          (tm_T4x4 out, T3 s)
-/// void tm_T4x4_scale_uni      (tm_T4x4 out, T s)
-/// void tm_T4x4_lookat         (tm_T4x4 out, T3 eye, T3 target, T3 up)
-/// void tm_T4x4_perspective    (tm_T4x4 out, T fov_degrees, T aspect, T near, T far)
-/// void tm_T4x4_ortho          (tm_T4x4 out, T left, T right, T bottom, T top, T near, T far)
-/// ```
 
 #define TM_MATRIX_SPECIFIC(T)\
 static inline void tm_##T##3x3_translate(tm_##T##3x3 out, tm_##T##2 const v) {\
@@ -375,8 +296,6 @@ static inline void tm_##T##4x4_ortho(tm_##T##4x4 out, T left, T right, T bottom,
         out[3][3] = 1.0;\
 }\
 
-/// ## Predefined types
-/// ```c
 TM_VECTOR(int,    2)
 TM_VECTOR(int,    3)
 TM_VECTOR(int,    4)
@@ -395,7 +314,6 @@ TM_MATRIX(double, 3, 3)
 TM_MATRIX(double, 4, 4)
 TM_MATRIX_SPECIFIC(float)
 TM_MATRIX_SPECIFIC(double)
-///```
 
 #endif // __tiny_math_h__
 

@@ -350,7 +350,7 @@ TAPPDEF void            tapp_window_set_title           (tapp_window *window, ch
 #if defined(TAPP_USE_X11)
         #include <X11/Xlib.h>
         #include <sys/time.h> // clock_gettime, CLOCK_REALTIME, CLOCK_MONOTONIC
-#elif defined(TAPP_USE_COCOA)
+#elif defined(TAPP_USE_COCOA)  && defined(__objc__)
         #import <Cocoa/Cocoa.h>
         #import <mach/mach_time.h>
 #endif
@@ -374,7 +374,7 @@ struct tapp_window {
                 Atom wm_del_wnd;
         } x11;
 
-#elif defined(TAPP_USE_COCOA)
+#elif defined(TAPP_USE_COCOA) && defined(__objc__)
         struct {
                 id wnd;
                 id delegate;
@@ -395,7 +395,7 @@ static struct {
                 int depth;
         } x11;
 
-#elif defined(TAPP_USE_COCOA)
+#elif defined(TAPP_USE_COCOA)  && defined(__objc__)
         struct {
                 id app;
         } cocoa;
@@ -413,7 +413,7 @@ static struct {
 
 #if defined(TAPP_USE_X11)
 
-TAPPDEF bool tapp__init_x11(void) {
+TAPPDEF bool tapp__init(void) {
         _tapp.x11.dpy = XOpenDisplay(NULL);
         if (!_tapp.x11.dpy) {
                 TAPP_LOG("Failed to connect to X server");
@@ -428,13 +428,13 @@ TAPPDEF bool tapp__init_x11(void) {
         return true;
 }
 
-TAPPDEF void tapp__quit_x11(void) {
+TAPPDEF void tapp__quit(void) {
         if (_tapp.x11.dpy) {
                 XCloseDisplay(_tapp.x11.dpy);
         }
 }
 
-TAPPDEF bool tapp_window__create_x11(tapp_window *window) {
+TAPPDEF bool tapp_window__create(tapp_window *window) {
         XSetWindowAttributes swa = {
                 .background_pixel = WhitePixel(_tapp.x11.dpy, _tapp.x11.screen),
                 .event_mask       = ExposureMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask,
@@ -453,22 +453,22 @@ TAPPDEF bool tapp_window__create_x11(tapp_window *window) {
         return true;
 }
 
-TAPPDEF void tapp_window__delete_x11(tapp_window *window) {
+TAPPDEF void tapp_window__delete(tapp_window *window) {
         XDestroyWindow(_tapp.x11.dpy, window->x11.wnd);
 }
 
-TAPPDEF int tapp__translate_key_x11(int key) {
+TAPPDEF int tapp__translate_key(int key) {
         (void)key;
         return 0;
 }
 
 // TODO
-TAPPDEF void tapp__poll_events_x11(tapp_event_callback callback) {
+TAPPDEF void tapp__poll_events(tapp_event_callback callback) {
         (void)window;
         (void)callback;
 }
 
-TAPPDEF void tapp_window__set_pos_x11(tapp_window *window, int x, int y) {
+TAPPDEF void tapp_window__set_pos(tapp_window *window, int x, int y) {
         if (!tapp_window_get_visible(window)) {
                 long unused;
                 XSizeHints *hints = XAllocSizeHints();
@@ -485,12 +485,12 @@ TAPPDEF void tapp_window__set_pos_x11(tapp_window *window, int x, int y) {
         window->desc.y = y;
 }
 
-TAPPDEF void tapp_window__set_size_x11(tapp_window *window, int w, int h) {
+TAPPDEF void tapp_window__set_size(tapp_window *window, int w, int h) {
         XResizeWindow(_tapp.x11.dpy, window->x11.wnd, w, h);
         XFlush(_tapp.x11.dpy);
 }
 
-TAPPDEF void tapp_window__set_visible_x11(tapp_window *window, int visible) {
+TAPPDEF void tapp_window__set_visible(tapp_window *window, int visible) {
         if (visible) {
                 XMapWindow(_tapp.x11.dpy, window->x11.wnd);
                 XMoveWindow(_tapp.x11.dpy, window->x11.wnd, window->desc.x, window->desc.y);
@@ -499,11 +499,11 @@ TAPPDEF void tapp_window__set_visible_x11(tapp_window *window, int visible) {
         }
 }
 
-TAPPDEF void tapp_window__set_title_x11(tapp_window *window, char const *title) {
+TAPPDEF void tapp_window__set_title(tapp_window *window, char const *title) {
         XStoreName(_tapp.x11.dpy, window->x11.wnd, title);
 }
 
-TAPPDEF double tapp__get_time_x11(void) {
+TAPPDEF double tapp__get_time(void) {
         struct timespec ts;
 #ifdef CLOCK_MONOTONIC
         clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -518,14 +518,14 @@ TAPPDEF double tapp__get_time_x11(void) {
 // }}}
 // {{{ Cocoa
 
-#elif defined(TAPP_USE_COCOA)
+#elif defined(TAPP_USE_COCOA)  && defined(__objc__)
 
 // {{{ objc
 
-@interface tapp__cocoa_app: NSObject <NSApplicationDelegate>
+@interface tapp__app: NSObject <NSApplicationDelegate>
 @end
 
-@implementation tapp__cocoa_app
+@implementation tapp__app
 
 -(void)applicationWillFinishLaunching:(NSNotification *)notification {
         // Setup a basic menubar
@@ -557,12 +557,12 @@ TAPPDEF double tapp__get_time_x11(void) {
 
 @end
 
-@interface tapp__cocoa_delegate : NSObject <NSWindowDelegate> {
+@interface tapp__delegate : NSObject <NSWindowDelegate> {
         tapp_window *window_;
 }
 @end
 
-@implementation tapp__cocoa_delegate
+@implementation tapp__delegate
 
 -(id)initWithWindow:(tapp_window *)window {
         if ((self = [super init])) {
@@ -588,10 +588,10 @@ TAPPDEF double tapp__get_time_x11(void) {
 
 // }}}
 
-TAPPDEF bool tapp__init_cocoa(void) {
+TAPPDEF bool tapp__init(void) {
         @autoreleasepool {
 
-        _tapp.cocoa.app = [[tapp__cocoa_app alloc] init];
+        _tapp.cocoa.app = [[tapp__app alloc] init];
         [NSApplication sharedApplication];
         [NSApp setDelegate:_tapp.cocoa.app];
         [NSApp finishLaunching];
@@ -601,7 +601,7 @@ TAPPDEF bool tapp__init_cocoa(void) {
         }
 }
 
-TAPPDEF void tapp__quit_cocoa(void) {
+TAPPDEF void tapp__quit(void) {
         @autoreleasepool {
 
         [NSApp terminate:nil];
@@ -611,7 +611,7 @@ TAPPDEF void tapp__quit_cocoa(void) {
         } // autoreleasepool
 }
 
-TAPPDEF void tapp__poll_events_cocoa(tapp_event_callback callback) {
+TAPPDEF void tapp__poll_events(tapp_event_callback callback) {
         @autoreleasepool {
 
         (void)callback; // TODO
@@ -626,7 +626,7 @@ TAPPDEF void tapp__poll_events_cocoa(tapp_event_callback callback) {
 }
 
 
-TAPPDEF bool tapp_window__create_cocoa(tapp_window *window) {
+TAPPDEF bool tapp_window__create(tapp_window *window) {
         @autoreleasepool {
 
         NSRect frame = NSMakeRect(window->desc.x, window->desc.y, window->desc.width, window->desc.height);
@@ -638,7 +638,7 @@ TAPPDEF bool tapp_window__create_cocoa(tapp_window *window) {
                 return false;
         }
 
-        window->cocoa.delegate = [[tapp__cocoa_delegate alloc] initWithWindow:window];
+        window->cocoa.delegate = [[tapp__delegate alloc] initWithWindow:window];
         if (!window->cocoa.delegate) {
                 TAPP_LOG("Failed to create cocoa window delegate");
                 return false;
@@ -656,7 +656,7 @@ TAPPDEF bool tapp_window__create_cocoa(tapp_window *window) {
         } // autoreleasepool
 }
 
-TAPPDEF void tapp_window__delete_cocoa(tapp_window *window) {
+TAPPDEF void tapp_window__delete(tapp_window *window) {
         @autoreleasepool {
 
         if (window->cocoa.delegate) {
@@ -673,7 +673,7 @@ TAPPDEF void tapp_window__delete_cocoa(tapp_window *window) {
         } // autoreleasepool
 }
 
-TAPPDEF void tapp_window__set_pos_cocoa(tapp_window *window, int x, int y) {
+TAPPDEF void tapp_window__set_pos(tapp_window *window, int x, int y) {
         @autoreleasepool {
 
         NSScreen* screen        = [NSScreen mainScreen];
@@ -686,7 +686,7 @@ TAPPDEF void tapp_window__set_pos_cocoa(tapp_window *window, int x, int y) {
         } // autoreleasepool
 }
 
-TAPPDEF void tapp_window__set_size_cocoa(tapp_window *window, int w, int h) {
+TAPPDEF void tapp_window__set_size(tapp_window *window, int w, int h) {
         @autoreleasepool {
 
         NSRect contentRect    = [window->cocoa.wnd contentRectForFrameRect:[window->cocoa.wnd frame]];
@@ -697,7 +697,7 @@ TAPPDEF void tapp_window__set_size_cocoa(tapp_window *window, int w, int h) {
         } // autoreleasepool
 }
 
-TAPPDEF void tapp_window__set_visible_cocoa(tapp_window *window, bool visible) {
+TAPPDEF void tapp_window__set_visible(tapp_window *window, bool visible) {
         @autoreleasepool {
 
         if (visible) {
@@ -709,7 +709,7 @@ TAPPDEF void tapp_window__set_visible_cocoa(tapp_window *window, bool visible) {
         } // autoreleasepool
 }
 
-TAPPDEF void tapp_window__set_title_cocoa(tapp_window *window, char const *title) {
+TAPPDEF void tapp_window__set_title(tapp_window *window, char const *title) {
         @autoreleasepool {
 
         if (window && window->cocoa.wnd) {
@@ -719,7 +719,7 @@ TAPPDEF void tapp_window__set_title_cocoa(tapp_window *window, char const *title
         } // autoreleasepool
 }
 
-TAPPDEF double tapp__get_time_cocoa(void) {
+TAPPDEF double tapp__get_time(void) {
         static bool first = true;
         static double frequency = 0.0;
         if (first) {
@@ -732,7 +732,7 @@ TAPPDEF double tapp__get_time_cocoa(void) {
         return now - _tapp.start_time;
 }
 
-#endif // defined(__linux__) || defined(TAPP_USE_COCOA)
+#endif // defined(__linux__) || (defined(TAPP_USE_COCOA) && defined(__objc__))
 
 // }}}
 // }}}
@@ -761,20 +761,12 @@ TAPPDEF bool tapp_init(tapp_desc const *desc) {
         if (!_tapp.desc.on_tick)  { _tapp.desc.on_tick  = tapp__default_on_tick;  }
         if (!_tapp.desc.on_quit)  { _tapp.desc.on_quit  = tapp__default_on_quit;  }
 
-#if defined(TAPP_USE_X11)
-        return tapp__init_x11();
-#elif defined(TAPP_USE_COCOA)
-        return tapp__init_cocoa();
-#endif
+        return tapp__init();
 }
 
 TAPPDEF void tapp_quit(void) {
         tapp_window_delete(tapp_get_main_window());
-#if defined(TAPP_USE_X11)
-        tapp__quit_x11();
-#elif defined(TAPP_USE_COCOA)
-        tapp__quit_cocoa();
-#endif
+        tapp__quit();
         memset(&_tapp, 0, sizeof _tapp);
 }
 
@@ -796,11 +788,7 @@ TAPPDEF tapp_window *tapp_window_create(tapp_window_desc const *desc) {
         window->desc.height = desc->height ? desc->height : 480;
         window->desc.flags  = desc->flags != TAPP_WINDOW_FLAG_DEFAULT ? desc->flags : TAPP_WINDOW_FLAG_CENTERED | TAPP_WINDOW_FLAG_CENTERED;
 
-#if defined(TAPP_USE_X11)
-        if (!tapp_window__create_x11(window)) {
-#elif defined(TAPP_USE_COCOA)
-        if (!tapp_window__create_cocoa(window)) {
-#endif
+        if (!tapp_window__create(window)) {
                 tapp_window_delete(window);
                 return NULL;
         }
@@ -810,21 +798,13 @@ TAPPDEF tapp_window *tapp_window_create(tapp_window_desc const *desc) {
 }
 
 TAPPDEF void tapp_window_delete(tapp_window *window) {
-#if defined(TAPP_USE_X11)
-        tapp_window__delete_x11(window);
-#elif defined(TAPP_USE_COCOA)
-        tapp_window__delete_cocoa(window);
-#endif
+        tapp_window__delete(window);
         *window = (tapp_window){0};
         free(window);
 }
 
 TAPPDEF void tapp_poll_events(tapp_event_callback callback) {
-#if defined(TAPP_USE_X11)
-        tapp__poll_events_x11(callback);
-#elif defined(TAPP_USE_COCOA)
-        tapp__poll_events_cocoa(callback);
-#endif
+        tapp__poll_events(callback);
 }
 
 TAPPDEF void tapp_window_get_pos(tapp_window const *window, int *x, int *y) {
@@ -837,13 +817,9 @@ TAPPDEF void tapp_window_set_pos(tapp_window *window, int x, int y) {
         assert(window);
         if (x < 0)   { x = 0; }
         if (y < 0)   { y = 0; }
-#if defined(TAPP_USE_X11)
-        tapp_window__set_pos_x11(window, x, y);
-#elif defined(TAPP_USE_COCOA)
-        tapp_window__set_pos_cocoa(window, x, y);
-#endif
         window->desc.x = x;
         window->desc.y = y;
+        tapp_window__set_pos(window, x, y);
 }
 
 TAPPDEF void tapp_window_get_size(tapp_window const *window, int *w, int *h) {
@@ -856,13 +832,9 @@ TAPPDEF void tapp_window_set_size(tapp_window *window, int w, int h) {
         assert(window);
         if (w < 0)   { w = 0; }
         if (h < 0)   { h = 0; }
-#if defined(TAPP_USE_X11)
-        tapp_window__size_pos_x11(window, w, h);
-#elif defined(TAPP_USE_COCOA)
-        tapp_window__set_size_cocoa(window, w, h);
-#endif
         window->desc.width  = w;
         window->desc.height = h;
+        tapp_window__set_size(window, w, h);
 }
 
 TAPPDEF bool tapp_window_get_visible(tapp_window const *window) {
@@ -872,16 +844,12 @@ TAPPDEF bool tapp_window_get_visible(tapp_window const *window) {
 
 TAPPDEF void tapp_window_set_visible(tapp_window *window, bool visible) {
         assert(window);
-#if defined(TAPP_USE_X11)
-        tapp_window__size_visible_x11(window, visible);
-#elif defined(TAPP_USE_COCOA)
-        tapp_window__set_visible_cocoa(window, visible);
-#endif
         if (visible) {
                 window->desc.flags |=  TAPP_WINDOW_FLAG_VISIBLE;
         } else {
                 window->desc.flags &= ~TAPP_WINDOW_FLAG_VISIBLE;
         }
+        tapp_window__set_visible(window, visible);
 }
 
 TAPPDEF bool tapp_window_get_should_close(tapp_window const *window) {
@@ -897,11 +865,7 @@ TAPPDEF void tapp_window_set_should_close(tapp_window *window, bool should_close
 TAPPDEF void tapp_window_set_title(tapp_window *window, char const *title) {
         assert(window);
         assert(title);
-#if defined(TAPP_USE_X11)
-        tapp_window__set_title_x11(window, title);
-#elif defined(TAPP_USE_COCOA)
-        tapp_window__set_title_cocoa(window, title);
-#endif
+        tapp_window__set_title(window, title);
         // window->desc.title = title; // ?
 }
 
@@ -910,11 +874,7 @@ TAPPDEF tapp_window *tapp_get_main_window(void) {
 }
 
 TAPPDEF double tapp_get_time(void) {
-#if defined(TAPP_USE_X11)
-        return tapp__get_time_x11();
-#elif defined(TAPP_USE_COCOA)
-        return tapp__get_time_cocoa();
-#endif
+        return tapp__get_time();
 }
 
 // }}}

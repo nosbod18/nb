@@ -38,14 +38,6 @@ int main(void) {
         tds_array_del(array, 8);
         tds_array_delswap(array, 0);
 
-        int *other = NULL;
-        tds_array_dup(other, array);
-
-        print_array(other);
-
-        int x = tds_array_pop(other);
-        printf("x = %d\n", x);
-
         tds_array_free(array);
         tds_array_push(array, 1);
         tds_array_push(array, 2);
@@ -54,5 +46,4 @@ int main(void) {
         print_array(array);
 
         tds_array_free(array);
-        tds_array_free(other);
 }

@@ -1,7 +1,7 @@
 out := bin
 src := $(wildcard */*.c)
 
-CFLAGS := -std=c99 -g -I.. -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter
+CFLAGS := -std=c99 -g3 -I.. -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter
 
 ifeq ($(shell uname -s), Darwin)
         CFLAGS += -x objective-c

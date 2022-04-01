@@ -139,9 +139,14 @@ void            tgfx_submit             (tgfx_buffer *command);
 #ifndef __tiny_gfx_c__
 #define __tiny_gfx_c__
 
-#include <stdio.h>
 #include <stdlib.h> // malloc, free
-#include <assert.h>
+#include <assert.h> // assert
+
+#if defined(__linux__)
+        #include <GL/gl.h>
+#elif defined(__APPLE__)
+        #include <OpenGL/gl.h>
+#endif // __linux__ || __APPLE__
 
 #ifndef uchar
         #define uchar   unsigned char
@@ -157,11 +162,8 @@ struct tgfx_buffer {
         int capacity;
         int size;
         int type;
+        int usage;
         int offset;
-};
-
-struct tgfx_pipeline {
-        tgfx_pipeline_desc desc;
 };
 
 typedef struct tgfx_uniform {
@@ -171,43 +173,56 @@ typedef struct tgfx_uniform {
         bool transposed;
 } tgfx_uniform;
 
-static int tgfx__gl_buffer_type(tgfx_buffer_type type) {
+struct tgfx_program {
+        tgfx_uniform uniforms[16];
+        uint id;
+};
+
+struct tgfx_pipeline {
+        tgfx_pipeline_desc desc;
+};
+
+
+#define TGFX__GL(x) while (glGetError() != GL_NO_ERROR); x; assert(glGetError() == GL_NO_ERROR)
+
+
+static int tgfx__buffer_type(tgfx_buffer_type type) {
         switch (type) {
-                case TGFX_BUFFER_TYPE_VERTEX:   return TGFX__GL_ARRAY_BUFFER;
-                case TGFX_BUFFER_TYPE_INDEX:    return TGFX__GL_ELEMENT_ARRAY_BUFFER;
-                default                         break;
+                case TGFX_BUFFER_TYPE_VERTEX:   return GL_ARRAY_BUFFER;
+                case TGFX_BUFFER_TYPE_INDEX:    return GL_ELEMENT_ARRAY_BUFFER;
+                default:                        break;
         }
         return 0;
 }
 
-static int tgfx__gl_buffer_usage(tgfx_buffer_usage usage) {
+static int tgfx__buffer_usage(tgfx_buffer_usage usage) {
         switch (usage) {
-                case TGFX_BUFFER_USAGE_STATIC:  return TGFX__GL_STATIC_DRAW;
-                case TGFX_BUFFER_USAGE_DYNAMIC: return TGFX__GL_DYNAMIC_DRAW;
-                case TGFX_BUFFER_USAGE_STREAM:  return TGFX__GL_STREAM_DRAW;
+                case TGFX_BUFFER_USAGE_STATIC:  return GL_STATIC_DRAW;
+                case TGFX_BUFFER_USAGE_DYNAMIC: return GL_DYNAMIC_DRAW;
+                case TGFX_BUFFER_USAGE_STREAM:  return GL_STREAM_DRAW;
                 default:                        break;
         }
         return 0;
 }
 
-static int tgfx__gl_uniform_type(tgfx_uniform_type type) {
+static int tgfx__uniform_type(tgfx_uniform_type type) {
         switch (type) {
-                case TGFX_UNIFORM_TYPE_FLOAT:   return TGFX__GL_FLOAT;
-                case TGFX_UNIFORM_TYPE_MATRIX:  return TGFX__GL_FLOAT;
+                case TGFX_UNIFORM_TYPE_FLOAT:   return GL_FLOAT;
+                case TGFX_UNIFORM_TYPE_MATRIX:  return GL_FLOAT;
                 default:                        break;
         }
         return 0;
 }
 
-static int tgfx__gl_vertex_type(tgfx_vertex_type type) {
+static int tgfx__vertex_type(tgfx_vertex_type type) {
         switch (type) {
-                case TGFX_VERTEX_TYPE_INT8:     return TGFX__GL_BYTE;
-                case TGFX_VERTEX_TYPE_UINT8:    return TGFX__GL_UNSIGNED_BYTE;
-                case TGFX_VERTEX_TYPE_INT16:    return TGFX__GL_SHORT;
-                case TGFX_VERTEX_TYPE_UINT16:   return TGFX__GL_UNSIGNED_SHORT;
-                case TGFX_VERTEX_TYPE_INT32:    return TGFX__GL_INT;
-                case TGFX_VERTEX_TYPE_UINT32:   return TGFX__GL_UNSIGNED_INT;
-                case TGFX_VERTEX_TYPE_FLOAT:    return TGFX__GL_FLOAT;
+                case TGFX_VERTEX_TYPE_INT8:     return GL_BYTE;
+                case TGFX_VERTEX_TYPE_UINT8:    return GL_UNSIGNED_BYTE;
+                case TGFX_VERTEX_TYPE_INT16:    return GL_SHORT;
+                case TGFX_VERTEX_TYPE_UINT16:   return GL_UNSIGNED_SHORT;
+                case TGFX_VERTEX_TYPE_INT32:    return GL_INT;
+                case TGFX_VERTEX_TYPE_UINT32:   return GL_UNSIGNED_INT;
+                case TGFX_VERTEX_TYPE_FLOAT:    return GL_FLOAT;
                 default:                        break;
         }
         return 0;
@@ -217,15 +232,15 @@ static int tgfx__gl_vertex_type(tgfx_vertex_type type) {
 tgfx_buffer *tgfx_buffer_create(tgfx_buffer_desc const *desc) {
         assert(desc);
 
-        tgfx_buffer *buffer = malloc(1, sizeof *buffer);
+        tgfx_buffer *buffer = calloc(1, sizeof *buffer);
         if (!buffer) {
                 return NULL;
         }
 
         buffer->data   = desc->data;
         buffer->size   = desc->size;
-        buffer->type   = tgfx__gl_buffer_type(desc->type);
-        buffer->useage = tgfx__gl_buffer_usage(desc->useage);
+        buffer->type   = tgfx__buffer_type(desc->type);
+        buffer->usage  = tgfx__buffer_usage(desc->usage);
 
         TGFX__GL(glGenBuffers(1, &buffer->id));
         TGFX__GL(glBindBuffer(buffer->type, buffer->id));
@@ -270,15 +285,15 @@ bool tgfx_buffer_append(tgfx_buffer *buffer, void const *data, int size) {
         return true;
 }
 
-static uint tgfx__gl_shader_create(char const *src, int type) {
+static uint tgfx__shader_create(char const *src, int type) {
         TGFX__GL(uint id = glCreateShader(type));
-        TGFX__GL(glShaderSource(id, 1, (TGFX__GLchar const **)&src, NULL));
+        TGFX__GL(glShaderSource(id, 1, (GLchar const **)&src, NULL));
         TGFX__GL(glCompileShader(id));
 
         int compiled;
-        TGFX__GL(glGetShaderiv(id, TGFX__GL_COMPILE_STATUS, &compiled));
+        TGFX__GL(glGetShaderiv(id, GL_COMPILE_STATUS, &compiled));
 
-        if (compiled == TGFX__GL_FALSE) {
+        if (compiled == GL_FALSE) {
                 char msg[128];
                 TGFX__GL(glGetShaderInfoLog(id, sizeof msg, NULL, msg));
                 printf("[TGFX__GL] Failed to compile shader\n%s\n", msg);
@@ -292,8 +307,8 @@ static uint tgfx__gl_shader_create(char const *src, int type) {
 tgfx_program *tgfx_program_create(tgfx_program_desc const *desc) {
         assert(desc);
 
-        uint vs = tgfx__gl_shader_create(desc->vs.source, TGFX__GL_VERTEX_SHADER);
-        uint fs = tgfx__gl_shader_create(desc->fs.source, TGFX__GL_FRAGMENT_SHADER);
+        uint vs = tgfx__shader_create(desc->vs.source, GL_VERTEX_SHADER);
+        uint fs = tgfx__shader_create(desc->fs.source, GL_FRAGMENT_SHADER);
 
         if (!vs || !fs) {
                 return NULL;
