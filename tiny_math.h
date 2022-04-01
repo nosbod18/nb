@@ -3,48 +3,50 @@
 
 #include <math.h> // sin, cos, tan, sqrt
 
+#define tm__var(x) tm__var_##x##__LINE__##__
+
 #define TM_VECTOR(T, N)\
 typedef T tm_##T##N[N];\
 static inline void tm_##T##N##_copy(tm_##T##N out, tm_##T##N a) {\
-        for (int _i = 0; _i < N; _i++)\
-                out[_i] = a[_i];\
+        for (int tm__var(i) = 0; tm__var(i) < N; tm__var(i)++)\
+                out[tm__var(i)] = a[tm__var(i)];\
 }\
 static inline void tm_##T##N##_add(tm_##T##N out, tm_##T##N const a, tm_##T##N const b) {\
-        for (int _i = 0; _i < N; _i++)\
-                out[_i] = a[_i] + b[_i];\
+        for (int tm__var(i) = 0; tm__var(i) < N; tm__var(i)++)\
+                out[tm__var(i)] = a[tm__var(i)] + b[tm__var(i)];\
 }\
 static inline void tm_##T##N##_sub(tm_##T##N out, tm_##T##N const a, tm_##T##N const b) {\
-        for (int _i = 0; _i < N; _i++)\
-                out[_i] = a[_i] - b[_i];\
+        for (int tm__var(i) = 0; tm__var(i) < N; tm__var(i)++)\
+                out[tm__var(i)] = a[tm__var(i)] - b[tm__var(i)];\
 }\
 static inline void tm_##T##N##_mul(tm_##T##N out, tm_##T##N const a, tm_##T##N const b) {\
-        for (int _i = 0; _i < N; _i++)\
-                out[_i] = a[_i] * b[_i];\
+        for (int tm__var(i) = 0; tm__var(i) < N; tm__var(i)++)\
+                out[tm__var(i)] = a[tm__var(i)] * b[tm__var(i)];\
 }\
 static inline void tm_##T##N##_div(tm_##T##N out, tm_##T##N const a, tm_##T##N const b) {\
-        for (int _i = 0; _i < N; _i++)\
-                out[_i] = a[_i] / b[_i];\
+        for (int tm__var(i) = 0; tm__var(i) < N; tm__var(i)++)\
+                out[tm__var(i)] = a[tm__var(i)] / b[tm__var(i)];\
 }\
 static inline void tm_##T##N##_adds(tm_##T##N out, tm_##T##N const a, T b) {\
-        for (int _i = 0; _i < N; _i++)\
-                out[_i] = a[_i] + b;\
+        for (int tm__var(i) = 0; tm__var(i) < N; tm__var(i)++)\
+                out[tm__var(i)] = a[tm__var(i)] + b;\
 }\
 static inline void tm_##T##N##_subs(tm_##T##N out, tm_##T##N const a, T b) {\
-        for (int _i = 0; _i < N; _i++)\
-                out[_i] = a[_i] - b;\
+        for (int tm__var(i) = 0; tm__var(i) < N; tm__var(i)++)\
+                out[tm__var(i)] = a[tm__var(i)] - b;\
 }\
 static inline void tm_##T##N##_muls(tm_##T##N out, tm_##T##N const a, T b) {\
-        for (int _i = 0; _i < N; _i++)\
-                out[_i] = a[_i] * b;\
+        for (int tm__var(i) = 0; tm__var(i) < N; tm__var(i)++)\
+                out[tm__var(i)] = a[tm__var(i)] * b;\
 }\
 static inline void tm_##T##N##_divs(tm_##T##N out, tm_##T##N const a, T b) {\
-        for (int _i = 0; _i < N; _i++)\
-                out[_i] = a[_i] / b;\
+        for (int tm__var(i) = 0; tm__var(i) < N; tm__var(i)++)\
+                out[tm__var(i)] = a[tm__var(i)] / b;\
 }\
 static inline T tm_##T##N##_dot(tm_##T##N const a, tm_##T##N const b) {\
         T dot = 0;\
-        for (int _i = 0; _i < N; _i++)\
-                dot += a[_i] * b[_i];\
+        for (int tm__var(i) = 0; tm__var(i) < N; tm__var(i)++)\
+                dot += a[tm__var(i)] * b[tm__var(i)];\
         return dot;\
 }\
 static inline T tm_##T##N##_mag2(tm_##T##N const a) {\
@@ -54,26 +56,26 @@ static inline T tm_##T##N##_mag(tm_##T##N const a) {\
         return sqrt(tm_##T##N##_mag2(a));\
 }\
 static inline void tm_##T##N##_min(tm_##T##N out, tm_##T##N const a, tm_##T##N const b) {\
-        for (int _i = 0; _i < N; _i++)\
-                out[_i] = a[_i] < b[_i] ? a[_i] : b[_i];\
+        for (int tm__var(i) = 0; tm__var(i) < N; tm__var(i)++)\
+                out[tm__var(i)] = a[tm__var(i)] < b[tm__var(i)] ? a[tm__var(i)] : b[tm__var(i)];\
 }\
 static inline void tm_##T##N##_max(tm_##T##N out, tm_##T##N const a, tm_##T##N const b) {\
-        for (int _i = 0; _i < N; _i++)\
-                out[_i] = a[_i] > b[_i] ? a[_i] : b[_i];\
+        for (int tm__var(i) = 0; tm__var(i) < N; tm__var(i)++)\
+                out[tm__var(i)] = a[tm__var(i)] > b[tm__var(i)] ? a[tm__var(i)] : b[tm__var(i)];\
 }\
 static inline void tm_##T##N##_norm(tm_##T##N out, tm_##T##N const a) {\
         tm_##T##N##_divs(out, a, tm_##T##N##_mag(a));\
 }\
 static inline T tm_##T##N##_min_val(tm_##T##N const a) {\
         T min = a[0];\
-        for (int _i = 1; _i < N; _i++)\
-                min = a[_i] < min ? a[_i] : min;\
+        for (int tm__var(i) = 1; tm__var(i) < N; tm__var(i)++)\
+                min = a[tm__var(i)] < min ? a[tm__var(i)] : min;\
         return min;\
 }\
 static inline T tm_##T##N##_max_val(tm_##T##N const a) {\
         T max = a[0];\
-        for (int _i = 1; _i < N; _i++)\
-                max = a[_i] > max ? a[_i] : max;\
+        for (int tm__var(i) = 1; tm__var(i) < N; tm__var(i)++)\
+                max = a[tm__var(i)] > max ? a[tm__var(i)] : max;\
         return max;\
 }\
 
@@ -93,70 +95,70 @@ static inline void tm_##T##3_cross(tm_##T##3 out, tm_##T##3 const a, tm_##T##3 c
 #define TM_MATRIX(T, R, C)\
 typedef T tm_##T##R##x##C[R][C];\
 static inline void tm_##T##R##x##C##_copy(tm_##T##R##x##C out, tm_##T##R##x##C a) {\
-        for (int _i = 0; _i < R; _i++)\
-                for (int _j = 0; _j < C; _j++)\
-                        out[_i][_j] = a[_i][_j]; /* Could do memset here, would have to include string.h */\
+        for (int tm__var(i) = 0; tm__var(i) < R; tm__var(i)++)\
+                for (int tm__var(j) = 0; tm__var(j) < C; tm__var(j)++)\
+                        out[tm__var(i)][tm__var(j)] = a[tm__var(i)][tm__var(j)]; /* Could do memset here, would have to include string.h */\
 }\
 static inline void tm_##T##R##x##C##_identity(tm_##T##R##x##C out) {\
-        for (int _i = 0; _i < R; _i++)\
-                for (int _j = 0; _j < C; _j++)\
-                     out[_i][_j] = (T)(_i == _j);\
+        for (int tm__var(i) = 0; tm__var(i) < R; tm__var(i)++)\
+                for (int tm__var(j) = 0; tm__var(j) < C; tm__var(j)++)\
+                     out[tm__var(i)][tm__var(j)] = (T)(tm__var(i) == tm__var(j));\
 }\
 static inline void tm_##T##R##x##C##_add(tm_##T##R##x##C out, tm_##T##R##x##C const a, tm_##T##R##x##C const b) {\
-        for (int _i = 0; _i < R; _i++)\
-                for (int _j = 0; _j < C; _j++)\
-                     out[_i][_j] = a[_i][_j] + b[_i][_j];\
+        for (int tm__var(i) = 0; tm__var(i) < R; tm__var(i)++)\
+                for (int tm__var(j) = 0; tm__var(j) < C; tm__var(j)++)\
+                     out[tm__var(i)][tm__var(j)] = a[tm__var(i)][tm__var(j)] + b[tm__var(i)][tm__var(j)];\
 }\
 static inline void tm_##T##R##x##C##_sub(tm_##T##R##x##C out, tm_##T##R##x##C const a, tm_##T##R##x##C const b) {\
-        for (int _i = 0; _i < R; _i++)\
-                for (int _j = 0; _j < C; _j++)\
-                     out[_i][_j] = a[_i][_j] - b[_i][_j];\
+        for (int tm__var(i) = 0; tm__var(i) < R; tm__var(i)++)\
+                for (int tm__var(j) = 0; tm__var(j) < C; tm__var(j)++)\
+                     out[tm__var(i)][tm__var(j)] = a[tm__var(i)][tm__var(j)] - b[tm__var(i)][tm__var(j)];\
 }\
 static inline void tm_##T##R##x##C##_mul(tm_##T##R##x##C out, tm_##T##R##x##C const a, tm_##T##R##x##C const b) {\
-        for (int _i = 0; _i < R; _i++)\
-                for (int _j = 0; _j < C; _j++)\
-                     out[_i][_j] = a[_i][_j] * b[_i][_j];\
+        for (int tm__var(i) = 0; tm__var(i) < R; tm__var(i)++)\
+                for (int tm__var(j) = 0; tm__var(j) < C; tm__var(j)++)\
+                     out[tm__var(i)][tm__var(j)] = a[tm__var(i)][tm__var(j)] * b[tm__var(i)][tm__var(j)];\
 }\
 static inline void tm_##T##R##x##C##_div(tm_##T##R##x##C out, tm_##T##R##x##C const a, tm_##T##R##x##C const b) {\
-        for (int _i = 0; _i < R; _i++)\
-                for (int _j = 0; _j < C; _j++)\
-                     out[_i][_j] = a[_i][_j] / b[_i][_j];\
+        for (int tm__var(i) = 0; tm__var(i) < R; tm__var(i)++)\
+                for (int tm__var(j) = 0; tm__var(j) < C; tm__var(j)++)\
+                     out[tm__var(i)][tm__var(j)] = a[tm__var(i)][tm__var(j)] / b[tm__var(i)][tm__var(j)];\
 }\
 static inline void tm_##T##R##x##C##_adds(tm_##T##R##x##C out, tm_##T##R##x##C const a, T b) {\
-        for (int _i = 0; _i < R; _i++)\
-                for (int _j = 0; _j < C; _j++)\
-                     out[_i][_j] = a[_i][_j] + b;\
+        for (int tm__var(i) = 0; tm__var(i) < R; tm__var(i)++)\
+                for (int tm__var(j) = 0; tm__var(j) < C; tm__var(j)++)\
+                     out[tm__var(i)][tm__var(j)] = a[tm__var(i)][tm__var(j)] + b;\
 }\
 static inline void tm_##T##R##x##C##_subs(tm_##T##R##x##C out, tm_##T##R##x##C const a, T b) {\
-        for (int _i = 0; _i < R; _i++)\
-                for (int _j = 0; _j < C; _j++)\
-                     out[_i][_j] = a[_i][_j] - b;\
+        for (int tm__var(i) = 0; tm__var(i) < R; tm__var(i)++)\
+                for (int tm__var(j) = 0; tm__var(j) < C; tm__var(j)++)\
+                     out[tm__var(i)][tm__var(j)] = a[tm__var(i)][tm__var(j)] - b;\
 }\
 static inline void tm_##T##R##x##C##_muls(tm_##T##R##x##C out, tm_##T##R##x##C const a, T b) {\
-        for (int _i = 0; _i < R; _i++)\
-                for (int _j = 0; _j < C; _j++)\
-                     out[_i][_j] = a[_i][_j] * b;\
+        for (int tm__var(i) = 0; tm__var(i) < R; tm__var(i)++)\
+                for (int tm__var(j) = 0; tm__var(j) < C; tm__var(j)++)\
+                     out[tm__var(i)][tm__var(j)] = a[tm__var(i)][tm__var(j)] * b;\
 }\
 static inline void tm_##T##R##x##C##_divs(tm_##T##R##x##C out, tm_##T##R##x##C const a, T b) {\
-        for (int _i = 0; _i < R; _i++)\
-                for (int _j = 0; _j < C; _j++)\
-                     out[_i][_j] = a[_i][_j] / b;\
+        for (int tm__var(i) = 0; tm__var(i) < R; tm__var(i)++)\
+                for (int tm__var(j) = 0; tm__var(j) < C; tm__var(j)++)\
+                     out[tm__var(i)][tm__var(j)] = a[tm__var(i)][tm__var(j)] / b;\
 }\
-static inline void tm_##T##R##x##C##_addn(tm_##T##R##x##C out, int n, tm_##T##R##x##C const in[]) {\
-        for (int _i = 0; _i < n; _i++)\
-                tm_##T##R##x##C##_add(out, out, in[_i]);\
+static inline void tm_##T##R##x##C##_addn(tm_##T##R##x##C out, tm_##T##R##x##C const in[], int n) {\
+        for (int tm__var(i) = 0; tm__var(i) < n; tm__var(i)++)\
+                tm_##T##R##x##C##_add(out, out, in[tm__var(i)]);\
 }\
-static inline void tm_##T##R##x##C##_subn(tm_##T##R##x##C out, int n, tm_##T##R##x##C const in[]) {\
-        for (int _i = 0; _i < n; _i++)\
-                tm_##T##R##x##C##_sub(out, out, in[_i]);\
+static inline void tm_##T##R##x##C##_subn(tm_##T##R##x##C out, tm_##T##R##x##C const in[], int n) {\
+        for (int tm__var(i) = 0; tm__var(i) < n; tm__var(i)++)\
+                tm_##T##R##x##C##_sub(out, out, in[tm__var(i)]);\
 }\
-static inline void tm_##T##R##x##C##_muln(tm_##T##R##x##C out, int n, tm_##T##R##x##C const in[]) {\
-        for (int _i = 0; _i < n; _i++)\
-                tm_##T##R##x##C##_mul(out, out, in[_i]);\
+static inline void tm_##T##R##x##C##_muln(tm_##T##R##x##C out, tm_##T##R##x##C const in[], int n) {\
+        for (int tm__var(i) = 0; tm__var(i) < n; tm__var(i)++)\
+                tm_##T##R##x##C##_mul(out, out, in[tm__var(i)]);\
 }\
-static inline void tm_##T##R##x##C##_divn(tm_##T##R##x##C out, int n, tm_##T##R##x##C const in[]) {\
-        for (int _i = 0; _i < n; _i++)\
-                tm_##T##R##x##C##_div(out, out, in[_i]);\
+static inline void tm_##T##R##x##C##_divn(tm_##T##R##x##C out, tm_##T##R##x##C const in[], int n) {\
+        for (int tm__var(i) = 0; tm__var(i) < n; tm__var(i)++)\
+                tm_##T##R##x##C##_div(out, out, in[tm__var(i)]);\
 }\
 
 #define TM_MATRIX_SPECIFIC(T)\

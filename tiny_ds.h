@@ -59,6 +59,11 @@ static void    *tds_array__grow                 (void *a, size_t asize, size_t n
 ///   capacity    length    hash/cmp    default ^--- User pointer
 /// ```
 
+typedef struct tds_map__func_storage {
+        uint64_t (*hash)(void const *);
+        int      (*cmp)(void const *, void const *);
+} tds_map__func_storage;
+
 #define tds_map_free(m)                 (tds_array_free(tds_map__head(m)))
 #define tds_map_len(m)                  ((m) ? tds_array_len(tds_map__head(m)) : 0)
 #define tds_map_cap(m)                  ((m) ? tds_array_cap(tds_map__head(m)) : 0)
@@ -73,7 +78,7 @@ static void    *tds_array__grow                 (void *a, size_t asize, size_t n
 #define tds_map_rem(m, k)               (tds_map_gets(m, k) = tds_map__default(m), tds_map__len(m)--)
 #define tds_map_clear(m)\
                 do {\
-                        for (size_t tds__var(i) = 0; tds__var(i) < tds_map_cap(m); tds__var(i)++) {\
+                        tds_map_for(tds__var(i), m) {\
                                 memcpy(&m[tds__var(i)], &tds_map__default(m), sizeof *(m));\
                         }\
                         tds_array_clear(tds_map__head(m));\
@@ -81,11 +86,6 @@ static void    *tds_array__grow                 (void *a, size_t asize, size_t n
 
 #define tds_map_for(i, m)               for (size_t (i) = 0; (i) < tds_map_cap(m); (i)++)
 #define tds_map_foreach(x, m, ...)      tds_map_for(tds__var(i), m) { if (tds_map__cmp(m, &(m)[tds__var(i)], &tds_map__default(m), sizeof *(m)) == 0) { (x) = (m)[tds__var(i)]; __VA_ARGS__ }}
-
-typedef struct tds_map__func_storage {
-        uint64_t (*hash)(void const *);
-        int      (*cmp)(void const *, void const *);
-} tds_map__func_storage;
 
 #define tds_map__header_size(m)         (sizeof *(m) + sizeof(tds_map__func_storage))
 #define tds_map__head(m)                ((char *)(m) - tds_map__header_size(m))
@@ -124,7 +124,7 @@ typedef struct tds_map__func_storage {
                                 memcpy(tds_map__head(tds__var(tmp)), tds_map__head(m), tds_map__header_size(tds__var(tmp)));\
                                 tds_map_clear(tds__var(tmp));\
                         }\
-                        for (size_t tds__var(i) = 0; tds__var(i) < tds_map_cap(m); tds__var(i)++) {\
+                        tds_map_for(tds__var(i), m) {\
                                 tds_map__ins(tds__var(tmp), (m)[tds__var(i)].key, (m)[tds__var(i)].value);\
                         }\
                         memcpy(m, tds__var(tmp), sizeof *(m) * tds_map_cap(m));\
@@ -136,14 +136,13 @@ static int      tds_map__indexof                (void *m, size_t msize, void *k,
 
 /// ## Sparse Set
 
-#define         tds_sset(T)                     struct { T tmp; tds_array(int) sparse; tds_array(T) dense; }
+#define         tds_sset(T)                     struct { tds_array(ssize_t) sparse; tds_array(T) dense; }
 #define         tds_sset_reserve(s, n)          (tds_array_reserve((s).sparse, n), tds_array_reserve((s).dense))
 #define         tds_sset_free(s)                (tds_array_free((s).sparse), tds_array_free((s).dense))
 #define         tds_sset_cap(s)                 (tds_array_cap((s).dense))
 #define         tds_sset_len(s)                 (tds_array_len((s).dense))
-#define         tds_sset_clear(s)               (tds_array_clear((s).sparse), tds_array_clear((s).dense))
 #define         tds_sset_get(s, i)              ((s).dense[(s).sparse[(i) % tds_array_len((s).sparse)]])
-#define         tds_sset_ins(s, v)              ((s).tmp = v, tds_sset__ins((s).dense, (s).sparse, &(s).tmp, sizeof *((s).dense)))
+#define         tds_sset_push(s, v)             (tds_sset__push(&(s).dense, (s).sparse, &(v), sizeof (v)))
 #define         tds_sset_rem(s, i)\
                 do {\
                         if (tds_sset_len(s) == 1) {\
@@ -151,34 +150,33 @@ static int      tds_map__indexof                (void *m, size_t msize, void *k,
                         } else if ((i) < tds_array_len((s).sparse) && (s).sparse[(i)] != -1) {\
                                 for (int tds__var(j) = 0; tds__var(j) < tds_array_len((s).sparse); tds__var(j)++) {\
                                         if ((s).sparse[tds__var(j)] == tds_array_len((s).dense) - 1) {\
-                                                tds_array_remswap((s).dense, (s).sparse[(i)]); /* remete data */\
-                                                (s).sparse[tds__var(j)] = (s).sparse[(i)]; /* Swap handles */\
-                                                (s).sparse[(i)] = -1; /* Invalidate remeted handle */\
+                                                tds_array_remswap((s).dense, (s).sparse[(i)]);\
+                                                (s).sparse[tds__var(j)] = (s).sparse[(i)];\
+                                                (s).sparse[(i)] = -1;\
                                                 tds_array__len((s).sparse)--;\
                                         }\
                                 }\
                         }\
                 } while (0)
+#define         tds_sset_clear(s)               (tds_array_clear((s).sparse), tds_array_clear((s).dense))
 
 #define         tds_sset_foreach(x, s, ...)     tds_array_foreach(x, (s).dense, __VA_ARGS__)
 #define         tds_sset_foreachp(x, s, ...)    tds_array_foreachp(x, (s).dense, __VA_ARGS__)
 
-int             tds_sset__ins                   (void *dense, int *sparse, void *v, int vsize);
+size_t          tds_sset__push                   (void **dense, ssize_t *sparse, void *v, size_t vsize);
 
 
 /// ## Sparse Map
 
-#define         tds_smap(K, V)                  struct { int tmp; struct { K key; int value; } map; tds_sset(V) sset; }
-#define         tds_smap_reserve(s, n)          (tds_map_reserve((s).map, n), tds_sset_reserve((s).sset, n))
+#define         tds_smap(K, V)                  struct { size_t tmp; struct { K key; ssize_t value; } map; tds_sset(V) sset; }
+#define         tds_smap_reserve(s, n)          (tds_sset_reserve((s).sset, n))
 #define         tds_smap_free(s)                (tds_map_free((s).map), tds_sset_free((s).sset))
 #define         tds_smap_cap(s)                 (tds_sset_cap((s).sset))
 #define         tds_smap_len(s)                 (tds_sset_len((s).sset))
-#define         tds_smap_clear(s)               (tds_map_clear((s).map), tds_sset_clear((s).sset))
-
 #define         tds_smap_get(s, k)              (tds_sset_get((s).sset, tds_map_get((s).map, k)))
-#define         tds_smap_set(s, k, v)           ((s).tmp = tds_sset_ins((s).sset, v), tds_map_set((s).map, k, (s).tmp), (s).tmp)
+#define         tds_smap_set(s, k, v)           ((s).tmp = tds_sset_push((s).sset, v), tds_map_set((s).map, k, (s).tmp), (s).tmp)
 #define         tds_smap_rem(s, k)              (tds_sset_rem((s).sset, tds_map_get((s).map, k)), tds_map_rem((s).map, k))
-
+#define         tds_smap_clear(s)               (tds_map_clear((s).map), tds_sset_clear((s).sset))
 #define         tds_smap_foreach(x, s, ...)     tds_sset_foreach(x, (s).sset, __VA_ARGS__)
 #define         tds_smap_foreachp(x, s, ...)    tds_sset_foreachp(x, (s).sset, __VA_ARGS__)
 
@@ -241,19 +239,19 @@ static int tds_map__indexof(void *m, size_t msize, void *k, size_t ksize, size_t
         return -1;
 }
 
-
-int tds_sset__ins(void *dense, int *sparse, void *v, int vsize) {
-        int i = 0;
+size_t tds_sset__push(void **dense, ssize_t *sparse, void *v, size_t vsize) {
+        size_t i = 0;
         for (; i < tds_array_len(sparse); i++) {
                 if (sparse[i] == -1)
                         break;
         }
 
-        tds_buffer__ensure(dense, vsize);
-        memcpy(&((char *)dense)[tds_array_len(dense) * vsize], v, vsize); // TODO: implement some sort of tds_array_pushbytes?
-        sparse[i] = tds_array_len(dense);
-
-        tds_array__len(dense)++;
+        // Manually check the array's capacity instead of tds_array__ensure so vsize can be used instead of sizeof *dense, which would give the wrong size.
+        if (tds_array_len(*dense) >= tds_array_cap(*dense)) {
+                *dense = tds_array__grow(*dense, vsize, tecs__npow2(tds_array_cap(*dense) * 2));
+        }
+        sparse[i] = tds_array_len(*dense);
+        tds_array_push(*((char **)dense), v);
         tds_array__len(sparse)++;
         return i;
 }

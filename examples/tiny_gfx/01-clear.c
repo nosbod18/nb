@@ -25,6 +25,7 @@ void tick(double dt) {
         tgfx_pass_begin(cbo, &pass);
         tgfx_pass_end(cbo);
         tgfx_submit(cbo);
+        tgfx_present();
 }
 
 void quit(void) {

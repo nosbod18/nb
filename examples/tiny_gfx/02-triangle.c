@@ -61,11 +61,12 @@ void tick(double dt) {
                 tgfx_draw(cbo, 3, 0, 0);
         tgfx_pass_end(cbo);
         tgfx_submit(cbo);
+        tgfx_present();
 }
 
 void quit(void) {
-        tgfx_buffer_delete(cbo);
         tgfx_buffer_delete(vbo);
+        tgfx_buffer_delete(cbo);
         tgfx_program_delete(prg);
         tgfx_pipeline_delete(pip);
 }
