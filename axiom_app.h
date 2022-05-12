@@ -1,367 +1,403 @@
+/* axiom_app.h - A C/C++ window, input, and main loop abstraction - v0.06 - public domain
+
+========================================================================================================================
+
+	YOU MUST
+
+		#define AXIOM_APP_IMPL
+
+	in EXACTLY _one_ C or C++ file that includes this header, BEFORE the
+	include like this:
+
+		#define AXIOM_APP_IMPL
+		#include "axiom_app.h"
+
+	All other files should just #include "axiom_app.h" without the #define
+
+========================================================================================================================
+
+LICENSE
+	This software is placed under the public domain. See the end of this file
+    for the full license.
+
+CREDITS
+	Written by Evan Dobson
+
+TODOS
+    -
+
+VERSION HISTORY
+    0.06  - Project name change
+    0.05b - Cocoa window now works
+    0.05a - Separated platform code into distinct sections
+    0.05  - Added window and event API
+    0.04  - Basic cocoa window
+    0.03  - Changed naming style
+    0.02a - More X11 stuff
+    0.02  - X11 basics
+    0.01  - Initial version
+*/
+
 #ifndef AXIOM_APP_H_
 #define AXIOM_APP_H_
 
 #include <stdbool.h> // bool
 
-typedef enum axa_key {
-    AXA_KEY_INVALID                 = 0x00,
-    AXA_KEY_BACKSPACE               = 0x08,
-    AXA_KEY_TAB                     = 0x09,
-    AXA_KEY_ESCAPE                  = 0x1b,
-    AXA_KEY_SPACE                   = ' ',
-    AXA_KEY_BANG                    = '!',
-    AXA_KEY_QUOTE                   = '\"',
-    AXA_KEY_POUND                   = '#',
-    AXA_KEY_DOLLAR                  = '$',
-    AXA_KEY_PERCENT                 = '%',
-    AXA_KEY_AMPERSAN                = '&',
-    AXA_KEY_APOSTROPHE              = '\'',
-    AXA_KEY_LEFT_PARENTHESES        = '(',
-    AXA_KEY_RIGHT_PARENTHESES       = ')',
-    AXA_KEY_ASTERISK                = '*',
-    AXA_KEY_PLUS                    = '+',
-    AXA_KEY_COMMA                   = ',',
-    AXA_KEY_MINUS                   = '-',
-    AXA_KEY_PERIOD                  = '.',
-    AXA_KEY_FORWARD_SLASH           = '/',
-    AXA_KEY_0                       = '0',
-    AXA_KEY_1                       = '1',
-    AXA_KEY_2                       = '2',
-    AXA_KEY_3                       = '3',
-    AXA_KEY_4                       = '4',
-    AXA_KEY_5                       = '5',
-    AXA_KEY_6                       = '6',
-    AXA_KEY_7                       = '7',
-    AXA_KEY_8                       = '8',
-    AXA_KEY_9                       = '9',
-    AXA_KEY_COLON                   = ':',
-    AXA_KEY_SEMICOLON               = ';',
-    AXA_KEY_LEFT_ANGLE_BRACKET      = '<',
-    AXA_KEY_EQUALS                  = '=',
-    AXA_KEY_RIGHT_ANGLE_BRACKET     = '>',
-    AXA_KEY_QUESTION_MARK           = '?',
-    AXA_KEY_AT                      = '@',
-    AXA_KEY_A                       = 'A',
-    AXA_KEY_B                       = 'B',
-    AXA_KEY_C                       = 'C',
-    AXA_KEY_D                       = 'D',
-    AXA_KEY_E                       = 'E',
-    AXA_KEY_F                       = 'F',
-    AXA_KEY_G                       = 'G',
-    AXA_KEY_H                       = 'H',
-    AXA_KEY_I                       = 'I',
-    AXA_KEY_J                       = 'J',
-    AXA_KEY_K                       = 'K',
-    AXA_KEY_L                       = 'L',
-    AXA_KEY_M                       = 'M',
-    AXA_KEY_N                       = 'N',
-    AXA_KEY_O                       = 'O',
-    AXA_KEY_P                       = 'P',
-    AXA_KEY_Q                       = 'Q',
-    AXA_KEY_R                       = 'R',
-    AXA_KEY_S                       = 'S',
-    AXA_KEY_T                       = 'T',
-    AXA_KEY_U                       = 'U',
-    AXA_KEY_V                       = 'V',
-    AXA_KEY_W                       = 'W',
-    AXA_KEY_X                       = 'X',
-    AXA_KEY_Y                       = 'Y',
-    AXA_KEY_Z                       = 'Z',
-    AXA_KEY_LEFT_BRACKET            = '[',
-    AXA_KEY_BACKSLASH               = '\\',
-    AXA_KEY_RIGHT_BRACKET           = ']',
-    AXA_KEY_CARROT                  = '^',
-    AXA_KEY_UNDERSCORE              = '_',
-    AXA_KEY_GRAVE_ACCENT            = '`',
-    AXA_KEY_LEFT_CURLY_BRACE        = '{',
-    AXA_KEY_VERTICALBAR             = '|',
-    AXA_KEY_RIGHT_CURLY_BRACE       = '}',
-    AXA_KEY_TILDA                   = '~',
-    AXA_KEY_DELETE                  = 0x7f,
-    AXA_KEY_KEYPAD_0                = 0x80,
-    AXA_KEY_KEYPAD_1                = 0x81,
-    AXA_KEY_KEYPAD_2                = 0x82,
-    AXA_KEY_KEYPAD_3                = 0x83,
-    AXA_KEY_KEYPAD_4                = 0x84,
-    AXA_KEY_KEYPAD_5                = 0x85,
-    AXA_KEY_KEYPAD_6                = 0x86,
-    AXA_KEY_KEYPAD_7                = 0x87,
-    AXA_KEY_KEYPAD_8                = 0x88,
-    AXA_KEY_KEYPAD_9                = 0x89,
-    AXA_KEY_KEYPAD_SEPARATOR        = 0x8a,
-    AXA_KEY_KEYPAD_FORWARD_SLASH    = 0x8b,
-    AXA_KEY_KEYPAD_ASTERISK         = 0x8c,
-    AXA_KEY_KEYPAD_PLUS             = 0x8d,
-    AXA_KEY_KEYPAD_MINUS            = 0x8e,
-    AXA_KEY_KEYPAD_ENTER            = 0x8f,
-    AXA_KEY_UP                      = 0x90,
-    AXA_KEY_DOWN                    = 0x91,
-    AXA_KEY_LEFT                    = 0x92,
-    AXA_KEY_RIGHT                   = 0x93,
-    AXA_KEY_PAGE_UP                 = 0x94,
-    AXA_KEY_PAGE_DOWN               = 0x95,
-    AXA_KEY_HOME                    = 0x96,
-    AXA_KEY_END                     = 0x97,
-    AXA_KEY_INSERT                  = 0x98,
-    AXA_KEY_F1                      = 0xa0,
-    AXA_KEY_F2                      = 0xa2,
-    AXA_KEY_F3                      = 0xa3,
-    AXA_KEY_F4                      = 0xa4,
-    AXA_KEY_F5                      = 0xa5,
-    AXA_KEY_F6                      = 0xa6,
-    AXA_KEY_F7                      = 0xa7,
-    AXA_KEY_F8                      = 0xa8,
-    AXA_KEY_F9                      = 0xa9,
-    AXA_KEY_F10                     = 0xaa,
-    AXA_KEY_F11                     = 0xab,
-    AXA_KEY_F12                     = 0xac,
-    AXA_KEY_LEFT_SHIFT              = 0xb0,
-    AXA_KEY_RIGHT_SHIFT             = 0xb1,
-    AXA_KEY_LEFT_CONTROL            = 0xb2,
-    AXA_KEY_RIGHT_CONTROL           = 0xb3,
-    AXA_KEY_LEFT_ALT                = 0xb4,
-    AXA_KEY_RIGHT_ALT               = 0xb5,
-    AXA_KEY_LEFT_SUPER              = 0xb6,
-    AXA_KEY_RIGHT_SUPER             = 0xb7,
-    AXA_KEY_MENU                    = 0xb8,
-    AXA_KEY_ALTGR                   = 0xb9,
-    AXA_KEY_NUM_LOCK                = 0xba,
-    AXA_KEY_CAPS_LOCK               = 0xbb,
-    AXA_KEY_SCROLL_LOCK             = 0xbc,
-    AXA_KEY_LAST                    = 0x100 // 256
-} axa_key;
+typedef enum app_key {
+    APP_KEY_INVALID                 = 0x00,
+    APP_KEY_BACKSPACE               = 0x08,
+    APP_KEY_TAB                     = 0x09,
+    APP_KEY_ESCAPE                  = 0x1b,
+    APP_KEY_SPACE                   = ' ',
+    APP_KEY_BANG                    = '!',
+    APP_KEY_QUOTE                   = '\"',
+    APP_KEY_POUND                   = '#',
+    APP_KEY_DOLLAR                  = '$',
+    APP_KEY_PERCENT                 = '%',
+    APP_KEY_AMPERSAN                = '&',
+    APP_KEY_APOSTROPHE              = '\'',
+    APP_KEY_LEFT_PARENTHESES        = '(',
+    APP_KEY_RIGHT_PARENTHESES       = ')',
+    APP_KEY_ASTERISK                = '*',
+    APP_KEY_PLUS                    = '+',
+    APP_KEY_COMMA                   = ',',
+    APP_KEY_MINUS                   = '-',
+    APP_KEY_PERIOD                  = '.',
+    APP_KEY_FORWARD_SLASH           = '/',
+    APP_KEY_0                       = '0',
+    APP_KEY_1                       = '1',
+    APP_KEY_2                       = '2',
+    APP_KEY_3                       = '3',
+    APP_KEY_4                       = '4',
+    APP_KEY_5                       = '5',
+    APP_KEY_6                       = '6',
+    APP_KEY_7                       = '7',
+    APP_KEY_8                       = '8',
+    APP_KEY_9                       = '9',
+    APP_KEY_COLON                   = ':',
+    APP_KEY_SEMICOLON               = ';',
+    APP_KEY_LEFT_ANGLE_BRACKET      = '<',
+    APP_KEY_EQUALS                  = '=',
+    APP_KEY_RIGHT_ANGLE_BRACKET     = '>',
+    APP_KEY_QUESTION_MARK           = '?',
+    APP_KEY_AT                      = '@',
+    APP_KEY_A                       = 'A',
+    APP_KEY_B                       = 'B',
+    APP_KEY_C                       = 'C',
+    APP_KEY_D                       = 'D',
+    APP_KEY_E                       = 'E',
+    APP_KEY_F                       = 'F',
+    APP_KEY_G                       = 'G',
+    APP_KEY_H                       = 'H',
+    APP_KEY_I                       = 'I',
+    APP_KEY_J                       = 'J',
+    APP_KEY_K                       = 'K',
+    APP_KEY_L                       = 'L',
+    APP_KEY_M                       = 'M',
+    APP_KEY_N                       = 'N',
+    APP_KEY_O                       = 'O',
+    APP_KEY_P                       = 'P',
+    APP_KEY_Q                       = 'Q',
+    APP_KEY_R                       = 'R',
+    APP_KEY_S                       = 'S',
+    APP_KEY_T                       = 'T',
+    APP_KEY_U                       = 'U',
+    APP_KEY_V                       = 'V',
+    APP_KEY_W                       = 'W',
+    APP_KEY_X                       = 'X',
+    APP_KEY_Y                       = 'Y',
+    APP_KEY_Z                       = 'Z',
+    APP_KEY_LEFT_BRACKET            = '[',
+    APP_KEY_BACKSLASH               = '\\',
+    APP_KEY_RIGHT_BRACKET           = ']',
+    APP_KEY_CARROT                  = '^',
+    APP_KEY_UNDERSCORE              = '_',
+    APP_KEY_GRAVE_ACCENT            = '`',
+    APP_KEY_LEFT_CURLY_BRACE        = '{',
+    APP_KEY_VERTICALBAR             = '|',
+    APP_KEY_RIGHT_CURLY_BRACE       = '}',
+    APP_KEY_TILDA                   = '~',
+    APP_KEY_DELETE                  = 0x7f,
+    APP_KEY_KEYPAD_0                = 0x80,
+    APP_KEY_KEYPAD_1                = 0x81,
+    APP_KEY_KEYPAD_2                = 0x82,
+    APP_KEY_KEYPAD_3                = 0x83,
+    APP_KEY_KEYPAD_4                = 0x84,
+    APP_KEY_KEYPAD_5                = 0x85,
+    APP_KEY_KEYPAD_6                = 0x86,
+    APP_KEY_KEYPAD_7                = 0x87,
+    APP_KEY_KEYPAD_8                = 0x88,
+    APP_KEY_KEYPAD_9                = 0x89,
+    APP_KEY_KEYPAD_SEPARATOR        = 0x8a,
+    APP_KEY_KEYPAD_FORWARD_SLASH    = 0x8b,
+    APP_KEY_KEYPAD_ASTERISK         = 0x8c,
+    APP_KEY_KEYPAD_PLUS             = 0x8d,
+    APP_KEY_KEYPAD_MINUS            = 0x8e,
+    APP_KEY_KEYPAD_ENTER            = 0x8f,
+    APP_KEY_UP                      = 0x90,
+    APP_KEY_DOWN                    = 0x91,
+    APP_KEY_LEFT                    = 0x92,
+    APP_KEY_RIGHT                   = 0x93,
+    APP_KEY_PAGE_UP                 = 0x94,
+    APP_KEY_PAGE_DOWN               = 0x95,
+    APP_KEY_HOME                    = 0x96,
+    APP_KEY_END                     = 0x97,
+    APP_KEY_INSERT                  = 0x98,
+    APP_KEY_F1                      = 0xa0,
+    APP_KEY_F2                      = 0xa2,
+    APP_KEY_F3                      = 0xa3,
+    APP_KEY_F4                      = 0xa4,
+    APP_KEY_F5                      = 0xa5,
+    APP_KEY_F6                      = 0xa6,
+    APP_KEY_F7                      = 0xa7,
+    APP_KEY_F8                      = 0xa8,
+    APP_KEY_F9                      = 0xa9,
+    APP_KEY_F10                     = 0xaa,
+    APP_KEY_F11                     = 0xab,
+    APP_KEY_F12                     = 0xac,
+    APP_KEY_LEFT_SHIFT              = 0xb0,
+    APP_KEY_RIGHT_SHIFT             = 0xb1,
+    APP_KEY_LEFT_CONTROL            = 0xb2,
+    APP_KEY_RIGHT_CONTROL           = 0xb3,
+    APP_KEY_LEFT_ALT                = 0xb4,
+    APP_KEY_RIGHT_ALT               = 0xb5,
+    APP_KEY_LEFT_SUPER              = 0xb6,
+    APP_KEY_RIGHT_SUPER             = 0xb7,
+    APP_KEY_MENU                    = 0xb8,
+    APP_KEY_ALTGR                   = 0xb9,
+    APP_KEY_NUM_LOCK                = 0xba,
+    APP_KEY_CAPS_LOCK               = 0xbb,
+    APP_KEY_SCROLL_LOCK             = 0xbc,
+    APP_KEY_LAST                    = 0x100 // 256
+} app_key;
 
-typedef enum axa_button {
-    AXA_MOUSE_BUTTON_1              = 0x01,
-    AXA_MOUSE_BUTTON_2              = 0x02,
-    AXA_MOUSE_BUTTON_3              = 0x03,
-    AXA_MOUSE_BUTTON_4              = 0x04,
-    AXA_MOUSE_BUTTON_5              = 0x05,
-    AXA_MOUSE_BUTTON_6              = 0x05,
-    AXA_MOUSE_BUTTON_7              = 0x07,
-    AXA_MOUSE_BUTTON_LAST           = 0x08,
-    AXA_MOUSE_BUTTON_LEFT           = AXA_MOUSE_BUTTON_1,
-    AXA_MOUSE_BUTTON_MIDDLE         = AXA_MOUSE_BUTTON_2,
-    AXA_MOUSE_BUTTON_RIGHT          = AXA_MOUSE_BUTTON_3,
-} axa_button;
+typedef enum app_button {
+    APP_MOUSE_BUTTON_1              = 0x01,
+    APP_MOUSE_BUTTON_2              = 0x02,
+    APP_MOUSE_BUTTON_3              = 0x03,
+    APP_MOUSE_BUTTON_4              = 0x04,
+    APP_MOUSE_BUTTON_5              = 0x05,
+    APP_MOUSE_BUTTON_6              = 0x05,
+    APP_MOUSE_BUTTON_7              = 0x07,
+    APP_MOUSE_BUTTON_LAST           = 0x08,
+    APP_MOUSE_BUTTON_LEFT           = APP_MOUSE_BUTTON_1,
+    APP_MOUSE_BUTTON_MIDDLE         = APP_MOUSE_BUTTON_2,
+    APP_MOUSE_BUTTON_RIGHT          = APP_MOUSE_BUTTON_3,
+} app_button;
 
-typedef enum axa_mod {
-    AXA_MOD_SHIFT                   = 1U << 0,
-    AXA_MOD_CONTROL                 = 1U << 1,
-    AXA_MOD_ALT                     = 1U << 2,
-    AXA_MOD_SUPER                   = 1U << 3,
-    AXA_MOD_NUM_LOCK                = 1U << 4,
-    AXA_MOD_CAPS_LOCK               = 1U << 5,
-    AXA_MOD_LAST
-} axa_mod;
+typedef enum app_mod {
+    APP_MOD_SHIFT                   = 1U << 0,
+    APP_MOD_CONTROL                 = 1U << 1,
+    APP_MOD_ALT                     = 1U << 2,
+    APP_MOD_SUPER                   = 1U << 3,
+    APP_MOD_NUM_LOCK                = 1U << 4,
+    APP_MOD_CAPS_LOCK               = 1U << 5,
+    APP_MOD_LAST
+} app_mod;
 
-typedef enum axa_event_type {
-    AXA_EVENT_TYPE_NONE             = 0,
-    AXA_EVENT_TYPE_QUIT,            // A quit has been requested
-    AXA_EVENT_TYPE_WINDOWEXPOSE,    // A window was partially exposed or hidden
-    AXA_EVENT_TYPE_WINDOWRESIZE,    // A window's size was changed
-    AXA_EVENT_TYPE_WINDOWFOCUS,     // A window's focus was changed
-    AXA_EVENT_TYPE_MOUSEBUTTON,     // A mouse button was pressed or released
-    AXA_EVENT_TYPE_MOUSEENTER,      // The mouse entered the window space
-    AXA_EVENT_TYPE_MOUSELEAVE,      // The mouse left the window space
-    AXA_EVENT_TYPE_MOUSEMOTION,     // The mouse changed position
-    AXA_EVENT_TYPE_MOUSESCROLL,     // The scroll wheel was moved
-    AXA_EVENT_TYPE_KEY,             // A key was pressed or released
-} axa_event_type;
+typedef enum app_event_type {
+    APP_EVENT_TYPE_NONE             = 0,
+    APP_EVENT_TYPE_QUIT,            // A quit has been requested
+    APP_EVENT_TYPE_WINDOWEXPOSE,    // A window was partially exposed or hidden
+    APP_EVENT_TYPE_WINDOWRESIZE,    // A window's size was changed
+    APP_EVENT_TYPE_WINDOWFOCUS,     // A window's focus was changed
+    APP_EVENT_TYPE_MOUSEBUTTON,     // A mouse button was pressed or released
+    APP_EVENT_TYPE_MOUSEENTER,      // The mouse entered the window space
+    APP_EVENT_TYPE_MOUSELEAVE,      // The mouse left the window space
+    APP_EVENT_TYPE_MOUSEMOTION,     // The mouse changed position
+    APP_EVENT_TYPE_MOUSESCROLL,     // The scroll wheel was moved
+    APP_EVENT_TYPE_KEY,             // A key was pressed or released
+} app_event_type;
 
-typedef enum axa_window_flags {
-    AXA_WINDOW_FLAG_DEFAULT         = 0,
-    AXA_WINDOW_FLAG_CENTERED        = 1U << 0,
-    AXA_WINDOW_FLAG_VISIBLE         = 1U << 1,
-    AXA_WINDOW_FLAG_VSYNC           = 1U << 2,
-    AXA_WINDOW_FLAG_FULLSCREEN      = 1U << 3,
-} axa_window_flags;
+typedef enum app_window_flags {
+    APP_WINDOW_FLAG_DEFAULT         = 0,
+    APP_WINDOW_FLAG_CENTERED        = 1U << 0,
+    APP_WINDOW_FLAG_VISIBLE         = 1U << 1,
+    APP_WINDOW_FLAG_VSYNC           = 1U << 2,
+    APP_WINDOW_FLAG_FULLSCREEN      = 1U << 3,
+} app_window_flags;
 
-typedef struct axa_window axa_window;
+typedef struct app_window app_window;
 
-typedef struct axa_window_desc {
+typedef struct app_window_desc {
     char const     *title;
     int             x;
     int             y;
-    int             width;
-    int             height;
+    int             w;
+    int             h;
     unsigned        flags;
-} axa_window_desc;
+} app_window_desc;
 
-typedef struct axa_expose_event {
-    axa_event_type  type;
+typedef struct app_expose_event {
+    app_event_type  type;
     double          time;
-    axa_window     *window;
+    app_window     *wnd;
     bool            visible;
-} axa_expose_event;
+} app_expose_event;
 
-typedef struct axa_focus_event {
-    axa_event_type  type;
+typedef struct app_focus_event {
+    app_event_type  type;
     double          time;
-    axa_window     *window;
+    app_window     *wnd;
     int             focused;
-} axa_focus_event;
+} app_focus_event;
 
-typedef struct axa_resize_event {
-    axa_event_type  type;
+typedef struct app_resize_event {
+    app_event_type  type;
     double          time;
-    axa_window     *window;
-    int             width;
-    int             height;
-} axa_resize_event;
+    app_window     *wnd;
+    int             w;
+    int             h;
+} app_resize_event;
 
-typedef struct axa_button_event {
-    axa_event_type  type;
+typedef struct app_button_event {
+    app_event_type  type;
     double          time;
-    axa_button      sym;
+    app_button      sym;
     unsigned        mods;
     int             pressed;
     int             x;
     int             y;
-} axa_button_event;
+} app_button_event;
 
-typedef struct axa_motion_event {
-    axa_event_type type;
+typedef struct app_motion_event {
+    app_event_type  type;
     double          time;
     double          dx;
     double          dy;
-} axa_motion_event;
+} app_motion_event;
 
-typedef struct axa_scroll_event {
-    axa_event_type type;
+typedef struct app_scroll_event {
+    app_event_type  type;
     double          time;
     double          dx;
     double          dy;
-} axa_scroll_event;
+} app_scroll_event;
 
-typedef struct axa_key_event {
-    axa_event_type type;
+typedef struct app_key_event {
+    app_event_type  type;
     double          time;
-    axa_key        sym;
+    app_key         sym;
     unsigned        mods;
     int             pressed;
-} axa_key_event;
+} app_key_event;
 
-typedef union axa_event {
-    axa_event_type         type;
-    axa_expose_event       expose;
-    axa_focus_event        focus;
-    axa_resize_event       resize;
-    axa_button_event       button;
-    axa_motion_event       motion;
-    axa_scroll_event       scroll;
-    axa_key_event          key;
-} axa_event;
+typedef union app_event {
+    app_event_type          type;
+    double                  time;
+    app_expose_event        expose;
+    app_focus_event         focus;
+    app_resize_event        resize;
+    app_button_event        button;
+    app_motion_event        motion;
+    app_scroll_event        scroll;
+    app_key_event           key;
+} app_event;
 
-typedef bool (*axa_init_callback)(void);
-typedef void (*axa_event_callback)(axa_event const *event);
-typedef void (*axa_tick_callback)(double dt);
-typedef void (*axa_quit_callback)(void);
+typedef bool (*app_init_callback)(void);
+typedef void (*app_event_callback)(app_event const *event);
+typedef void (*app_tick_callback)(double dt);
+typedef void (*app_quit_callback)(void);
 
-typedef struct axa_desc {
-    axa_window_desc        window;
-    axa_init_callback      on_init;
-    axa_event_callback     on_event;
-    axa_tick_callback      on_tick;
-    axa_quit_callback      on_quit;
-} axa_desc;
+typedef struct app_desc {
+    app_window_desc        window;
+    app_init_callback      on_init;
+    app_event_callback     on_event;
+    app_tick_callback      on_tick;
+    app_quit_callback      on_quit;
+} app_desc;
 
 
-axa_desc    axa_main                    (int argc, char **argv);
-axa_window *axa_get_main_window         (void);
-double      axa_get_time                (void);
-char const *axa_event_type_string       (axa_event_type type);
+app_desc    app_main                    (int argc, char **argv);
 
-#define     axa_get_pos(intarr)         axa_window_get_pos(axa_get_main_window(), intarr)
-#define     axa_set_pos(x, y)           axa_window_set_pos(axa_get_main_window(), xptr, yptr)
-#define     axa_get_size(intarr)        axa_window_get_size(axa_get_main_window(), intarr)
-#define     axa_set_size(w, h)          axa_window_set_size(axa_get_main_window(), w, h)
-#define     axa_get_visible()           axa_window_get_visible(axa_get_main_window())
-#define     axa_set_visible(visible)    axa_window_set_visible(axa_get_main_window())
-#define     axa_get_should_quit()       axa_window_get_should_close(axa_get_main_window())
-#define     axa_set_should_quit(quit)   axa_window_set_should_close(axa_get_main_window(), quit)
-#define     axa_set_title(title)        axa_window_set_title(axa_get_main_window(), title)
+void        app_get_pos                 (int *x, int *y);
+void        app_set_pos                 (int x, int y);
+void        app_get_size                (int *w, int *h);
+void        app_set_size                (int w, int h);
+bool        app_get_visible             (void);
+void        app_set_visible             (bool visible);
+bool        app_get_should_quit         (void);
+void        app_set_should_quit         (bool quit);
+void        app_set_title               (char const *title);
+double      app_get_time                (void);
 
-// Semi internal, use when AXA_CUSTOM_ENTRY is defined or if more control is needed
-bool        axa_init                    (axa_desc const *desc);
-void        axa_quit                    (void);
-void        axa_poll_events             (axa_event_callback callback);
+// Semi internal, use when APP_CUSTOM_ENTRY is defined or if more control is needed
+bool        app_init                    (app_desc const *desc);
+void        app_quit                    (void);
+void        app_poll_events             (app_event_callback callback);
 
 // Semi internal, use if multiple windows are needed
-axa_window *axa_window_alloc            (axa_window_desc const *desc);
-void        axa_window_free             (axa_window *window);
-void        axa_window_get_pos          (axa_window const *window, int pos[]);
-void        axa_window_set_pos          (axa_window *window, int x, int y);
-void        axa_window_get_size         (axa_window const *window, int size[]);
-void        axa_window_set_size         (axa_window *window, int w, int h);
-bool        axa_window_get_visible      (axa_window const *window);
-void        axa_window_set_visible      (axa_window *window, bool visible);
-bool        axa_window_get_should_close (axa_window const *window);
-void        axa_window_set_should_close (axa_window *window, bool should_close);
-void        axa_window_set_title        (axa_window *window, char const *title);
+app_window *app_window_alloc            (app_window_desc const *desc);
+void        app_window_free             (app_window *wnd);
+void        app_window_get_pos          (app_window const *wnd, int *x, int *y);
+void        app_window_set_pos          (app_window *wnd, int x, int y);
+void        app_window_get_size         (app_window const *wnd, int *w, int *h);
+void        app_window_set_size         (app_window *wnd, int w, int h);
+bool        app_window_get_visible      (app_window const *wnd);
+void        app_window_set_visible      (app_window *wnd, bool visible);
+bool        app_window_get_should_close (app_window const *wnd);
+void        app_window_set_should_close (app_window *wnd, bool should_close);
+void        app_window_set_title        (app_window *wnd, char const *title);
 
-/*************************************************************************************************************************************************************
-**************************************************************************************************************************************************************
-****                                                                                                                                                      ****
-****                                                                                                                                                      ****
-****                                                                    Implementation                                                                    ****
-****                                                                                                                                                      ****
-****                                                                                                                                                      ****
-**************************************************************************************************************************************************************
-*************************************************************************************************************************************************************/
+/***********************************************************************************************************************
+************************************************************************************************************************
+****                                                                                                                ****
+****                                                                                                                ****
+****                                                 Implementation                                                 ****
+****                                                                                                                ****
+****                                                                                                                ****
+************************************************************************************************************************
+***********************************************************************************************************************/
 
 
-#if defined(AXA_IMPL) || defined(AXIOM_IMPL)
+#if defined(AXIOM_APP_IMPL) || defined(AXIOM_IMPL)
 #ifndef AXIOM_APP_C_
 #define AXIOM_APP_C_
 
-#if !defined(AXA_USE_X11) && !defined(AXA_USE_COCOA)
+#if !defined(APP_USE_X11) && !defined(APP_USE_COCOA)
     #ifdef __linux__
-        #ifndef AXA_USE_X11
-            #define AXA_USE_X11
+        #ifndef APP_USE_X11
+            #define APP_USE_X11
         #endif
     #endif
     #ifdef __APPLE__
-        #ifndef AXA_USE_COCOA
-            #define AXA_USE_COCOA
+        #ifndef APP_USE_COCOA
+            #define APP_USE_COCOA
         #endif
     #endif
 #endif
 
-#if defined(AXA_USE_X11)
+#if defined(APP_USE_X11)
     #include <X11/Xlib.h>
     #include <sys/time.h> // clock_gettime, CLOCK_REALTIME, CLOCK_MONOTONIC
-#elif defined(AXA_USE_COCOA)  && defined(__objc__)
+#elif defined(APP_USE_COCOA) && defined(__OBJC__)
     #import <Cocoa/Cocoa.h>
     #import <mach/mach_time.h>
 #endif
 
 #include <string.h> // memset
 #include <stdio.h>  // fprintf
-#include <stdlib.h> // calloc, free, exit
+#include <stdlib.h> // calloc, free
+#include <assert.h>
 
-#define axa_log(...)           do { fprintf(stderr, "[axiom_app.h:%04d] ", __LINE__); fprintf(stderr, __VA_ARGS__); fprintf(stderr, "\n"); } while (0)
-#define axa_assert(x, ...)     do { if ((x) == 0) { axa_log("Assert failed: %s", #x); exit(1); }} while (0)
-
-
-struct axa_window {
-#if defined(AXA_USE_X11)
+struct app_window {
+#if defined(APP_USE_X11)
     struct {
             Window wnd;
             Atom wm_del_wnd;
     } x11;
-#elif defined(AXA_USE_COCOA) && defined(__objc__)
+#elif defined(APP_USE_COCOA) && defined(__OBJC__)
     struct {
             id wnd;
             id delegate;
     } cocoa;
 #endif
-    axa_window_desc desc;
+    app_window_desc desc;
     bool should_close;
 };
 
 static struct {
-#if defined(AXA_USE_X11)
+#if defined(APP_USE_X11)
     struct {
             Display *dpy;
             Visual *vis;
@@ -369,141 +405,112 @@ static struct {
             int screen;
             int depth;
     } x11;
-#elif defined(AXA_USE_COCOA)  && defined(__objc__)
+#elif defined(APP_USE_COCOA)  && defined(__OBJC__)
     struct {
             id app;
     } cocoa;
 #endif
-    axa_desc desc;
-    axa_window *main_window;
+    app_desc desc;
+    app_window *wnd;
     double start_time;
     bool should_quit;
-} _axa = {0};
+} _app = {0};
 
 
-axa_window *axa_get_main_window(void) {
-    return _axa.main_window;
-}
-
-double axa_get_time(void) {
-    return axa__get_time();
-}
-
-char const *axa_event_type_string(axa_event_type type) {
-#define SWITCH_ENUM_STR(x) case x: return #x
-    switch (type) {
-            SWITCH_ENUM_STR(AXA_EVENT_TYPE_NONE);
-            SWITCH_ENUM_STR(AXA_EVENT_TYPE_QUIT);
-            SWITCH_ENUM_STR(AXA_EVENT_TYPE_WINDOWEXPOSE);
-            SWITCH_ENUM_STR(AXA_EVENT_TYPE_WINDOWRESIZE);
-            SWITCH_ENUM_STR(AXA_EVENT_TYPE_WINDOWFOCUS);
-            SWITCH_ENUM_STR(AXA_EVENT_TYPE_MOUSEBUTTON);
-            SWITCH_ENUM_STR(AXA_EVENT_TYPE_MOUSEENTER);
-            SWITCH_ENUM_STR(AXA_EVENT_TYPE_MOUSELEAVE);
-            SWITCH_ENUM_STR(AXA_EVENT_TYPE_MOUSEMOTION);
-            SWITCH_ENUM_STR(AXA_EVENT_TYPE_MOUSESCROLL);
-            SWITCH_ENUM_STR(AXA_EVENT_TYPE_KEY);
-            default: break;
-    }
-    return "Unknown event";
-#undef SWITCH_ENUM_STR
-}
+#if defined(APP_USE_X11)
 
 
-#if defined(AXA_USE_X11)
-
-
-bool axa__init(void) {
-    _axa.x11.dpy = XOpenDisplay(NULL);
-    if (!_axa.x11.dpy) {
-        axa_log("Failed to connect to X server");
+bool app__init(void) {
+    _app.x11.dpy = XOpenDisplay(NULL);
+    if (!_app.x11.dpy) {
+        fprintf(stderr, "Failed to connect to X server\n");
         return false;
     }
 
-    _axa.x11.root_wnd = DefaultRootWindow(_axa.x11.dpy);
-    _axa.x11.screen   = DefaultScreen(_axa.x11.dpy);
-    _axa.x11.vis      = DefaultVisual(_axa.x11.dpy, _axa.x11.screen);
-    _axa.x11.depth    = DefaultDepth(_axa.x11.dpy, _axa.x11.screen);
-    _axa.start_time   = axa_get_time();
+    _app.x11.root_wnd = DefaultRootWindow(_app.x11.dpy);
+    _app.x11.screen   = DefaultScreen(_app.x11.dpy);
+    _app.x11.vis      = DefaultVisual(_app.x11.dpy, _app.x11.screen);
+    _app.x11.depth    = DefaultDepth(_app.x11.dpy, _app.x11.screen);
+    _app.start_time   = app_get_time();
     return true;
 }
 
-void axa__quit(void) {
-    if (_axa.x11.dpy) {
-        XCloseDisplay(_axa.x11.dpy);
+void app__quit(void) {
+    if (_app.x11.dpy) {
+        XCloseDisplay(_app.x11.dpy);
     }
 }
 
-bool axa_window__init(axa_window *window) {
+bool app_window__init(app_window *wnd) {
     XSetWindowAttributes swa = {
-        .background_pixel = WhitePixel(_axa.x11.dpy, _axa.x11.screen),
+        .background_pixel = WhitePixel(_app.x11.dpy, _app.x11.screen),
         .event_mask       = ExposureMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask,
     };
     unsigned long swa_mask = CWEventMask | CWBorderPixel | CWBackPixel;
 
-    window->x11.wnd = XCreateWindow(dpy, root_wnd, window->desc.x, window->desc.y, window->desc.width, window->desc.height, 0, depth, InputOutput, _axa.x11.vis, swa_mask, &swa);
+    wnd->x11.wnd = XCreateWindow(dpy, root_wnd, wnd->desc.x, wnd->desc.y, wnd->desc.w, wnd->desc.h, 0, depth, InputOutput, _app.x11.vis, swa_mask, &swa);
 
-    if (!window->x11.wnd) {
-        axa_log("Failed to create x11 window");
+    if (!wnd->x11.wnd) {
+        fprintf(stderr, "Failed to create x11 window\n");
         return false;
     }
 
-    window->x11.wm_del_wnd = XInternAtom(_axa.x11.dpy, "WM_DELETE_WINDOW", False);
-    XSetWMProtocols(_axa.x11.dpy, window->x11.wnd, &window->x11.wm_del_wnd, 1);
+    wnd->x11.wm_del_wnd = XInternAtom(_app.x11.dpy, "WM_DELETE_WINDOW", False);
+    XSetWMProtocols(_app.x11.dpy, wnd->x11.wnd, &wnd->x11.wm_del_wnd, 1);
     return true;
 }
 
-void axa_window__deinit(axa_window *window) {
-    XDestroyWindow(_axa.x11.dpy, window->x11.wnd);
+void app_window__deinit(app_window *wnd) {
+    XDestroyWindow(_app.x11.dpy, wnd->x11.wnd);
 }
 
-int axa__translate_key(int key) {
+int app__translate_key(int key) {
     (void)key;
     return 0;
 }
 
 // TODO
-void axa__poll_events(axa_event_callback callback) {
-    (void)window;
+void app__poll_events(app_event_callback callback) {
+    (void)wnd;
     (void)callback;
 }
 
-void axa_window__set_pos(axa_window *window, int x, int y) {
-    if (!axa_window_get_visible(window)) {
+void app_window__set_pos(app_window *wnd, int x, int y) {
+    if (!app_window_get_visible(wnd)) {
         long unused;
         XSizeHints *hints = XAllocSizeHints();
-        if (XGetWMNormalHints(_axa.x11.dpy, window->x11.wnd, hints, &unused)) {
+        if (XGetWMNormalHints(_app.x11.dpy, wnd->x11.wnd, hints, &unused)) {
             hints->flags |= PPosition;
             hints->x = hints->y = 0;
-            XSetWMNormalHints(_axa.x11.dpy, window->x11.wnd, hints);
+            XSetWMNormalHints(_app.x11.dpy, wnd->x11.wnd, hints);
         }
         XFree(hints);
     }
 
-    XMoveWindow(_axa.x11.dpy, window->x11.wnd, x, y);
-    window->desc.x = x;
-    window->desc.y = y;
+    XMoveWindow(_app.x11.dpy, wnd->x11.wnd, x, y);
+    wnd->desc.x = x;
+    wnd->desc.y = y;
 }
 
-void axa_window__set_size(axa_window *window, int w, int h) {
-    XResizeWindow(_axa.x11.dpy, window->x11.wnd, w, h);
-    XFlush(_axa.x11.dpy);
+void app_window__set_size(app_window *wnd, int w, int h) {
+    XResizeWindow(_app.x11.dpy, wnd->x11.wnd, w, h);
+    XFlush(_app.x11.dpy);
 }
 
-void axa_window__set_visible(axa_window *window, int visible) {
+void app_window__set_visible(app_window *wnd, int visible) {
     if (visible) {
-        XMapWindow(_axa.x11.dpy, window->x11.wnd);
-        XMoveWindow(_axa.x11.dpy, window->x11.wnd, window->desc.x, window->desc.y);
+        XMapWindow(_app.x11.dpy, wnd->x11.wnd);
+        XMoveWindow(_app.x11.dpy, wnd->x11.wnd, wnd->desc.x, wnd->desc.y);
     } else {
-        XUnmapWindow(_axa.x11.dpy, window->x11.wnd);
+        XUnmapWindow(_app.x11.dpy, wnd->x11.wnd);
     }
 }
 
-void axa_window__set_title(axa_window *window, char const *title) {
-    XStoreName(_axa.x11.dpy, window->x11.wnd, title);
+void app_window__set_title(app_window *wnd, char const *title) {
+    XStoreName(_app.x11.dpy, wnd->x11.wnd, title);
 }
 
-double axa__get_time(void) {
+double app__get_time(void) {
     struct timespec ts;
 #ifdef CLOCK_MONOTONIC
     clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -512,17 +519,17 @@ double axa__get_time(void) {
 #endif
     // Convert to seconds
     double now = ts.tv_sec + (double)ts.tv_nsec * 1e-9;
-    return now - _axa.start_time;
+    return now - _app.start_time;
 }
 
 
-#elif defined(AXA_USE_COCOA)  && defined(__objc__)
+#elif defined(APP_USE_COCOA)  && defined(__OBJC__)
 
 
-@interface axa__app: NSObject <NSApplicationDelegate>
+@interface app__app: NSObject <NSApplicationDelegate>
 @end
 
-@implementation axa__app
+@implementation app__app
 
 -(void)applicationWillFinishLaunching:(NSNotification *)notification {
     // Setup a basic menubar
@@ -549,21 +556,21 @@ double axa__get_time(void) {
 }
 
 -(void)applicationWillTerminate:(NSApplication *)sender {
-    axa_set_should_quit(true);
+    app_set_should_quit(true);
 }
 
 @end
 
-@interface axa__delegate : NSObject <NSWindowDelegate> {
-    axa_window *window_;
+@interface app__delegate : NSObject <NSWindowDelegate> {
+    app_window *window_;
 }
 @end
 
-@implementation axa__delegate
+@implementation app__delegate
 
--(id)initWithWindow:(axa_window *)window {
+-(id)initWithWindow:(app_window *)wnd {
     if ((self = [super init])) {
-        window_ = window;
+        window_ = wnd;
     }
     return self;
 }
@@ -573,22 +580,22 @@ double axa__get_time(void) {
 }
 
 -(BOOL)windowShouldClose:(NSWindow *)sender {
-    axa_window_set_should_close(window_, 1);
+    app_window_set_should_close(window_, 1);
     return NO;
 }
 
 -(void)windowWillClose:(id)sender {
-    axa_window_set_should_close(window_, 1);
+    app_window_set_should_close(window_, 1);
 }
 
 @end
 
-bool axa__init(void) {
+bool app__init(void) {
     @autoreleasepool {
 
-    _axa.cocoa.app = [[axa__app alloc] init];
+    _app.cocoa.app = [[app__app alloc] init];
     [NSApplication sharedApplication];
-    [NSApp setDelegate:_axa.cocoa.app];
+    [NSApp setDelegate:_app.cocoa.app];
     [NSApp finishLaunching];
 
     return true;
@@ -596,17 +603,17 @@ bool axa__init(void) {
     }
 }
 
-void axa__quit(void) {
+void app__quit(void) {
     @autoreleasepool {
 
     [NSApp terminate:nil];
-    [_axa.cocoa.app release];
-    _axa.cocoa.app = nil;
+    [_app.cocoa.app release];
+    _app.cocoa.app = nil;
 
     } // autoreleasepool
 }
 
-void axa__poll_events(axa_event_callback callback) {
+void app__poll_events(app_event_callback callback) {
     @autoreleasepool {
 
     (void)callback; // TODO
@@ -621,29 +628,29 @@ void axa__poll_events(axa_event_callback callback) {
 }
 
 
-bool axa_window__init(axa_window *window) {
+bool app_window__init(app_window *wnd) {
     @autoreleasepool {
 
-    NSRect frame = NSMakeRect(window->desc.x, window->desc.y, window->desc.width, window->desc.height);
-    unsigned style = NSWindowStyleMaskClosable | NSWindowStyleMaskTitled | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable; // TODO: Custom window style
+    NSRect frame = NSMakeRect(wnd->desc.x, wnd->desc.y, wnd->desc.w, wnd->desc.h);
+    unsigned style = NSWindowStyleMaskClosable | NSWindowStyleMaskTitled | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable; // TODO: Custom wnd style
 
-    window->cocoa.wnd = [[NSWindow alloc] initWithContentRect:frame styleMask:style backing:NSBackingStoreBuffered defer:NO];
-    if (window->cocoa.wnd == nil) {
-        axa_log("Failed to create cocoa window");
+    wnd->cocoa.wnd = [[NSWindow alloc] initWithContentRect:frame styleMask:style backing:NSBackingStoreBuffered defer:NO];
+    if (wnd->cocoa.wnd == nil) {
+        fprintf(stderr, "Failed to create cocoa wnd\n");
         return false;
     }
 
-    window->cocoa.delegate = [[axa__delegate alloc] initWithWindow:window];
-    if (window->cocoa.delegate == nil) {
-        axa_log("Failed to create cocoa window delegate");
+    wnd->cocoa.delegate = [[app__delegate alloc] initWithWindow:wnd];
+    if (wnd->cocoa.delegate == nil) {
+        fprintf(stderr, "Failed to create cocoa wnd delegate\n");
         return false;
     }
 
-    [window->cocoa.wnd setDelegate:window->cocoa.delegate];
-    [window->cocoa.wnd setBackgroundColor:[NSColor colorWithRed:1 green:1 blue:1 alpha:1]];
+    [wnd->cocoa.wnd setDelegate:wnd->cocoa.delegate];
+    [wnd->cocoa.wnd setBackgroundColor:[NSColor colorWithRed:1 green:1 blue:1 alpha:1]];
 
-    if ((window->desc.flags >> AXA_WINDOW_FLAG_CENTERED) & 1U == 1) {
-        [(NSWindow *)window->cocoa.wnd center];
+    if (((wnd->desc.flags >> APP_WINDOW_FLAG_CENTERED) & 1U) == 1) {
+        [(NSWindow *)wnd->cocoa.wnd center];
     }
 
     return true;
@@ -651,70 +658,70 @@ bool axa_window__init(axa_window *window) {
     } // autoreleasepool
 }
 
-void axa_window__deinit(axa_window *window) {
+void app_window__deinit(app_window *wnd) {
     @autoreleasepool {
 
-    if (window->cocoa.delegate != nil) {
-        [window->cocoa.wnd setDelegate:nil];
-        [window->cocoa.delegate release];
-        window->cocoa.delegate = nil;
+    if (wnd->cocoa.delegate != nil) {
+        [wnd->cocoa.wnd setDelegate:nil];
+        [wnd->cocoa.delegate release];
+        wnd->cocoa.delegate = nil;
     }
 
-    if (window->cocoa.wnd != nil) {
-        [window->cocoa.wnd close];
-        window->cocoa.wnd = nil;
+    if (wnd->cocoa.wnd != nil) {
+        [wnd->cocoa.wnd close];
+        wnd->cocoa.wnd = nil;
     }
 
     } // autoreleasepool
 }
 
-void axa_window__set_pos(axa_window *window, int x, int y) {
+void app_window__set_pos(app_window *wnd, int x, int y) {
     @autoreleasepool {
 
-    NSScreen* screen        = [NSScreen mainScreen];
-    CGSize frame            = [screen frame].size;
-    NSRect visible_frame    = [screen visibleFrame];
-    CGFloat menubar_height  = frame.height - visible_frame.size.height - visible_frame.origin.y;
+    NSScreen* screen = [NSScreen mainScreen];
+    CGSize frame     = [screen frame].size;
+    NSRect visframe  = [screen visibleFrame];
+    CGFloat height   = frame.height - visframe.size.height - visframe.origin.y;
 
-    [window->cocoa.wnd setFrameTopLeftPoint:NSMakePoint(x, frame.height - menubar_height - y)];
+    [wnd->cocoa.wnd setFrameTopLeftPoint:NSMakePoint(x, frame.height - height - y)];
 
     } // autoreleasepool
 }
 
-void axa_window__set_size(axa_window *window, int w, int h) {
+void app_window__set_size(app_window *wnd, int w, int h) {
     @autoreleasepool {
 
-    NSRect contentRect    = [window->cocoa.wnd contentRectForFrameRect:[window->cocoa.wnd frame]];
+    NSRect contentRect    = [wnd->cocoa.wnd contentRectForFrameRect:[wnd->cocoa.wnd frame]];
     contentRect.origin.y += contentRect.size.height - h;
     contentRect.size      = NSMakeSize(w, h);
-    [window->cocoa.wnd setFrame:[window->cocoa.wnd frameRectForContentRect:contentRect] display:YES];
+    [wnd->cocoa.wnd setFrame:[wnd->cocoa.wnd frameRectForContentRect:contentRect] display:YES];
 
     } // autoreleasepool
 }
 
-void axa_window__set_visible(axa_window *window, bool visible) {
+void app_window__set_visible(app_window *wnd, bool visible) {
     @autoreleasepool {
 
     if (visible == true) {
-        [window->cocoa.wnd makeKeyAndOrderFront:nil];
+        [wnd->cocoa.wnd makeKeyAndOrderFront:nil];
     } else {
-        [window->cocoa.wnd orderOut:nil];
+        [wnd->cocoa.wnd orderOut:nil];
     }
 
     } // autoreleasepool
 }
 
-void axa_window__set_title(axa_window *window, char const *title) {
+void app_window__set_title(app_window *wnd, char const *title) {
     @autoreleasepool {
 
-    if (window != NULL && window->cocoa.wnd != nil) {
-        [window->cocoa.wnd setTitle:[NSString stringWithUTF8String:title]];
+    if (wnd != NULL && wnd->cocoa.wnd != nil) {
+        [wnd->cocoa.wnd setTitle:[NSString stringWithUTF8String:title]];
     }
 
     } // autoreleasepool
 }
 
-double axa__get_time(void) {
+double app__get_time(void) {
     static bool first = true;
     static double frequency = 0.0;
     if (first == true) {
@@ -724,222 +731,245 @@ double axa__get_time(void) {
         first = false;
     }
     double now = mach_absolute_time() * frequency;
-    return now - _axa.start_time;
+    return now - _app.start_time;
 }
 
 
-#endif // defined(__linux__) || (defined(AXA_USE_COCOA) && defined(__objc__))
+#endif // defined(__linux__) || (defined(APP_USE_COCOA) && defined(__OBJC__))
+
+void app_get_pos(int *x, int *y) {
+    app_window_get_pos(_app.wnd, x, y);
+}
+
+void app_set_pos(int x, int y) {
+    app_window_set_pos(_app.wnd, x, y);
+}
+
+void app_get_size(int *w, int *h) {
+    app_window_get_size(_app.wnd, w, h);
+}
+
+void app_set_size(int w, int h) {
+    app_window_set_size(_app.wnd, w, h);
+}
+
+bool app_get_visible(void) {
+    return app_window_get_visible(_app.wnd);
+}
+
+void app_set_visible(bool visible) {
+    app_window_set_visible(_app.wnd, visible);
+}
+
+bool app_get_should_quit(void) {
+    return app_window_get_should_close(_app.wnd);
+}
+
+void app_set_should_quit(bool quit) {
+    app_window_set_should_close(_app.wnd, quit);
+}
+
+void app_set_title(char const *title) {
+    app_window_set_title(_app.wnd, title);
+}
 
 
-bool axa__default_on_init(void) {
+bool app__default_on_init(void) {
     return true;
 }
 
-void axa__default_on_event(axa_event const *e) {
+void app__default_on_event(app_event const *e) {
     (void)e;
 }
 
-void axa__default_on_tick(double dt) {
+void app__default_on_tick(double dt) {
     (void)dt;
 }
 
-void axa__default_on_quit(void) {
+void app__default_on_quit(void) {
 }
 
-bool axa_init(axa_desc const *desc) {
-    _axa.desc = *desc;
 
-    if (_axa.desc.on_init == NULL)  { _axa.desc.on_init  = axa__default_on_init;  }
-    if (_axa.desc.on_event == NULL) { _axa.desc.on_event = axa__default_on_event; }
-    if (_axa.desc.on_tick == NULL)  { _axa.desc.on_tick  = axa__default_on_tick;  }
-    if (_axa.desc.on_quit == NULL)  { _axa.desc.on_quit  = axa__default_on_quit;  }
-
-    return axa__init();
+double app_get_time(void) {
+    return app__get_time();
 }
 
-void axa_quit(void) {
-    axa_window_free(axa_get_main_window());
-    axa__quit();
-    memset(&_axa, 0, sizeof _axa);
+bool app_init(app_desc const *desc) {
+    _app.desc = *desc;
+
+    if (_app.desc.on_init == NULL)  { _app.desc.on_init  = app__default_on_init;  }
+    if (_app.desc.on_event == NULL) { _app.desc.on_event = app__default_on_event; }
+    if (_app.desc.on_tick == NULL)  { _app.desc.on_tick  = app__default_on_tick;  }
+    if (_app.desc.on_quit == NULL)  { _app.desc.on_quit  = app__default_on_quit;  }
+
+    return app__init();
 }
 
-axa_window *axa_window_alloc(axa_window_desc const *desc) {
-    axa_window *window = calloc(1, sizeof *window);
-    if (window == NULL) {
-        axa_log("Failed to create window, out of memory");
+void app_quit(void) {
+    app_window_free(_app.wnd);
+    app__quit();
+    memset(&_app, 0, sizeof _app);
+}
+
+app_window *app_window_alloc(app_window_desc const *desc) {
+    app_window *wnd = calloc(1, sizeof *wnd);
+    if (wnd == NULL) {
+        fprintf(stderr, "Failed to create window, out of memory");
         return NULL;
     }
 
-    // Set defaults if needed
-    window->desc.title  = desc->title ? desc->title : "Untitled";
-    window->desc.x      = desc->x;
-    window->desc.y      = desc->y;
-    window->desc.width  = desc->width  ? desc->width  : 640;
-    window->desc.height = desc->height ? desc->height : 480;
-    window->desc.flags  = desc->flags != AXA_WINDOW_FLAG_DEFAULT ? desc->flags : AXA_WINDOW_FLAG_CENTERED | AXA_WINDOW_FLAG_CENTERED;
+    wnd->desc = (app_window_desc){
+        .title = desc->title ? desc->title : "Untitled",
+        .x = desc->x,
+        .y = desc->y,
+        .w = desc->w ? desc->w : 640,
+        .h = desc->h ? desc->h : 480,
+        .flags = desc->flags != APP_WINDOW_FLAG_DEFAULT ? desc->flags : APP_WINDOW_FLAG_CENTERED
+    };
 
-    if (axa_window__init(window) == false) {
-        axa_window_free(window);
+    if (app_window__init(wnd) == false) {
+        app_window_free(wnd);
         return NULL;
     }
 
-    axa_window_set_title(window, window->desc.title);
-    axa_window_set_visible(window, true);
-    return window;
+    app_window_set_title(wnd, wnd->desc.title);
+    app_window_set_visible(wnd, true);
+    return wnd;
 }
 
-void axa_window_free(axa_window *window) {
-    axa_window__deinit(window);
-    *window = (axa_window){0};
-    free(window);
+void app_window_free(app_window *wnd) {
+    app_window__deinit(wnd);
+    *wnd = (app_window){0};
+    free(wnd);
 }
 
-void axa_poll_events(axa_event_callback callback) {
-    axa__poll_events(callback);
+void app_poll_events(app_event_callback callback) {
+    app__poll_events(callback);
 }
 
-void axa_window_get_pos(axa_window const *window, int pos[2]) {
-    axa_assert(window && pos, "Invalid parameter(s)");
-    pos[0] = window->desc.x;
-    pos[1] = window->desc.y;
+void app_window_get_pos(app_window const *wnd, int *x, int *y) {
+    assert(wnd && "Invalid parameter(s)");
+    if (x != NULL) { *x = wnd->desc.x; }
+    if (y != NULL) { *y = wnd->desc.y; }
 }
 
-void axa_window_set_pos(axa_window *window, int x, int y) {
-    axa_assert(window, "Invalid parameter(s)");
+void app_window_set_pos(app_window *wnd, int x, int y) {
+    assert(wnd && "Invalid parameter(s)");
     if (x < 0) { x = 0; }
     if (y < 0) { y = 0; }
-    window->desc.x = x;
-    window->desc.y = y;
-    axa_window__set_pos(window, x, y);
+    wnd->desc.x = x;
+    wnd->desc.y = y;
+    app_window__set_pos(wnd, x, y);
 }
 
-void axa_window_get_size(axa_window const *window, int size[2]) {
-    axa_assert(window, "Invalid parameter(s)");
-    size[0] = window->desc.width;
-    size[1] = window->desc.height;
+void app_window_get_size(app_window const *wnd, int *w, int *h) {
+    assert(wnd && "Invalid parameter(s)");
+    if (w != NULL) { *w = wnd->desc.w; }
+    if (h != NULL) { *h = wnd->desc.h; }
 }
 
-void axa_window_set_size(axa_window *window, int w, int h) {
-    axa_assert(window, "Invalid parameter(s)");
+void app_window_set_size(app_window *wnd, int w, int h) {
+    assert(wnd && "Invalid parameter(s)");
     if (w < 0) { w = 0; }
     if (h < 0) { h = 0; }
-    window->desc.width  = w;
-    window->desc.height = h;
-    axa_window__set_size(window, w, h);
+    wnd->desc.w = w;
+    wnd->desc.h = h;
+    app_window__set_size(wnd, w, h);
 }
 
-bool axa_window_get_visible(axa_window const *window) {
-    axa_assert(window, "Invalid parameter(s)");
-    return (window->desc.flags >> AXA_WINDOW_FLAG_VISIBLE) & 1U;
+bool app_window_get_visible(app_window const *wnd) {
+    assert(wnd && "Invalid parameter(s)");
+    return (wnd->desc.flags >> APP_WINDOW_FLAG_VISIBLE) & 1U;
 }
 
-void axa_window_set_visible(axa_window *window, bool visible) {
-    axa_assert(window, "Invalid parameter(s)");
+void app_window_set_visible(app_window *wnd, bool visible) {
+    assert(wnd && "Invalid parameter(s)");
     if (visible == true) {
-        window->desc.flags |=  AXA_WINDOW_FLAG_VISIBLE;
+        wnd->desc.flags |=  APP_WINDOW_FLAG_VISIBLE;
     } else {
-        window->desc.flags &= ~AXA_WINDOW_FLAG_VISIBLE;
+        wnd->desc.flags &= ~APP_WINDOW_FLAG_VISIBLE;
     }
-    axa_window__set_visible(window, visible);
+    app_window__set_visible(wnd, visible);
 }
 
-bool axa_window_get_should_close(axa_window const *window) {
-    axa_assert(window, "Invalid parameter(s)");
-    return window->should_close;
+bool app_window_get_should_close(app_window const *wnd) {
+    assert(wnd && "Invalid parameter(s)");
+    return wnd->should_close;
 }
 
-void axa_window_set_should_close(axa_window *window, bool should_close) {
-    axa_assert(window, "Invalid parameter(s)");
-    window->should_close = should_close;
+void app_window_set_should_close(app_window *wnd, bool should_close) {
+    assert(wnd && "Invalid parameter(s)");
+    wnd->should_close = should_close;
 }
 
-void axa_window_set_title(axa_window *window, char const *title) {
-    axa_assert(window && title, "Invalid parameter(s)");
-    axa_window__set_title(window, title);
-    // window->desc.title = title; // ?
+void app_window_set_title(app_window *wnd, char const *title) {
+    assert(wnd && title && "Invalid parameter(s)");
+    app_window__set_title(wnd, title);
 }
 
 
-#ifndef AXA_CUSTOM_ENTRY
+#ifndef APP_CUSTOM_ENTRY
 
 
 int main(int argc, char **argv) {
-    axa_desc desc = axa_main(argc, argv);
-    if (axa_init(&desc) == false) {
-        axa_log("Error on initialization, exiting...");
+    app_desc desc = app_main(argc, argv);
+    if (app_init(&desc) == false) {
+        fprintf(stderr, "Error on initialization, exiting...");
         return -1;
     }
 
-    _axa.main_window = axa_window_alloc(&desc.window);
-    if (_axa.main_window == NULL) {
-        axa_log("Error on initialization, exiting...");
-        axa_quit();
+    _app.wnd = app_window_alloc(&desc.window);
+    if (_app.wnd == NULL) {
+        fprintf(stderr, "Error on initialization, exiting...");
+        app_quit();
         return -1;
     }
 
-    if (_axa.desc.on_init() == NULL) {
-        axa_log("Error on initialization, exiting...");
-        axa_quit();
+    if (_app.desc.on_init() == false) {
+        fprintf(stderr, "Error on initialization, exiting...");
+        app_quit();
         return -1;
     }
 
-    double last = axa_get_time();
-    while (!axa_get_should_quit()) {
+    double last = app_get_time();
+    while (!app_get_should_quit()) {
         // Update frame timings
-        double now = axa_get_time();
+        double now = app_get_time();
         double dt = now - last;
         last = now;
 
-        _axa.desc.on_tick(dt);
-        axa_poll_events(_axa.desc.on_event);
+        _app.desc.on_tick(dt);
+        app_poll_events(_app.desc.on_event);
     }
 
-    _axa.desc.on_quit();
-    axa_quit();
+    _app.desc.on_quit();
+    app_quit();
     return 0;
 }
 
-#endif // !AXA_CUSTOM_ENTRY
+#endif // !APP_CUSTOM_ENTRY
 #endif // !AXIOM_APP_C_
-#endif // AXA_IMPL || AXIOM_IMPL
+#endif // AXIOM_APP_IMPL || AXIOM_IMPL
 #endif // !AXIOM_APP_H_
 
-
 /// ## License
-/// This software is available under 2 licenses -- choose whichever you prefer.
-///
-/// #### ALTERNATIVE A - MIT License
-/// Copyright (c) 2022 Evan Dobson
-/// Permission is hereby granted, free of charge, to any person obtaining a copy of
-/// this software and associated documentation files (the "Software"), to deal in
-/// the Software without restriction, including without limitation the rights to
-/// use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
-/// of the Software, and to permit persons to whom the Software is furnished to do
-/// so, subject to the following conditions:
-/// The above copyright notice and this permission notice shall be included in all
-/// copies or substantial portions of the Software.
-/// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-/// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-/// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-/// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-/// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-/// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-/// SOFTWARE.
-///
-/// #### ALTERNATIVE B - Public Domain (www.unlicense.org)
 /// This is free and unencumbered software released into the public domain.
 /// Anyone is free to copy, modify, publish, use, compile, sell, or distribute this
 /// software, either in source code form or as a compiled binary, for any purpose,
 /// commercial or non-commercial, and by any means.
+///
 /// In jurisdictions that recognize copyright laws, the author or authors of this
 /// software dedicate any and all copyright interest in the software to the public
 /// domain. We make this dedication for the benefit of the public at large and to
 /// the detriment of our heirs and successors. We intend this dedication to be an
 /// overt act of relinquishment in perpetuity of all present and future rights to
 /// this software under copyright law.
+///
 /// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 /// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 /// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 /// AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
 /// ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 /// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+///
+/// For more information, please refer to <http://unlicense.org/>

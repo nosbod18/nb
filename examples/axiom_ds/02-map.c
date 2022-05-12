@@ -1,4 +1,4 @@
-#define AXD_IMPL
+#define AXIOM_DS_IMPL
 #include "axiom_ds.h"
 #include <stdio.h>
 
@@ -9,31 +9,26 @@ typedef struct custom_key_t {
 } custom_key_t;
 
 #define print_map(m)\
-    printf("[\"Hello world\"] = %d\n", axd_map_get(map, "Hello world"));\
-    printf("[\"Example\"    ] = %d\n", axd_map_get(map, "Example"));\
-    printf("[\"Testing\"    ] = %d\n", axd_map_get(map, "Testing"));\
-    printf("[\"Not in map\" ] = %d\n", axd_map_get(map, "Not in map"))
+    printf("[\"Hello world\"] = %d\n", map_get(map, "Hello world"));\
+    printf("[\"Example\"    ] = %d\n", map_get(map, "Example"));\
+    printf("[\"Testing\"    ] = %d\n", map_get(map, "Testing"));\
+    printf("[\"Not in map\" ] = %d\n", map_get(map, "Not in map"))
 
 int main(void) {
     struct {char const *key; int value; } *map = NULL;
-    axd_map_set_default(map, NULL, -1);
+    map_set_default(map, NULL, -1);
 
-    axd_map_ins(map, "Hello world", 4);
-    axd_map_ins(map, "Example", 1);
-    axd_map_ins(map, "Testing", 100);
-
-    print_map(map);
-
-    axd_map_rem(map, "Hello world");
-    axd_map_rem(map, "Testing");
+    int a = 4, b = 1, c = 100;
+    map_set(map, "Hello world", a);
+    map_set(map, "Example", b);
+    map_set(map, "Testing", c);
 
     print_map(map);
 
-    axd_map_foreachp(int *x, map, {
-        *x++;
-    });
+    map_rem(map, "Hello world");
+    map_rem(map, "Testing");
 
     print_map(map);
 
-    axd_map_free(map);
+    map_free(map);
 }

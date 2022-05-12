@@ -1,6 +1,6 @@
-#define AXA_IMPL
+#define AXIOM_APP_IMPL
 #include "axiom_app.h"
 
-axa_desc axa_main(int argc, char **argv) {
-    return (axa_desc){0};
+app_desc app_main(int argc, char **argv) {
+    return (app_desc){0};
 }

@@ -1,12 +1,12 @@
-#define AXA_IMPL
-#define AXG_IMPL
+#define AXIOM_APP_IMPL
+#define AXIOM_GFX_IMPL
 #include "axiom_app.h"
 #include "axiom_gfx.h"
 
-axg_buffer   *vbo;
-axg_buffer   *cbo;
-axg_program  *prg;
-axg_pipeline *pip;
+gfx_buffer   *vbo;
+gfx_buffer   *cbo;
+gfx_program  *prg;
+gfx_pipeline *pip;
 
 bool init(void) {
     float const vertices[] = {
@@ -15,16 +15,16 @@ bool init(void) {
         -0.5f, -0.5f,  0.0f, 0.0f, 1.0f, 1.0f,
     };
 
-    vbo = axg_buffer_create(&(axg_buffer_desc){
+    vbo = gfx_buffer_create(&(gfx_buffer_desc){
         .data = vertices,
         .size = sizeof vertices,
     });
 
-    cbo = axg_buffer_create(&(axg_buffer_desc){
-        .type = AXG_BUFFER_TYPE_COMMAND
+    cbo = gfx_buffer_create(&(gfx_buffer_desc){
+        .type = GFX_BUFFER_TYPE_COMMAND
     });
 
-    prg = axg_program_create(&(axg_program_desc){
+    prg = gfx_program_create(&(gfx_program_desc){
         .vs.source =
             "#version 330 core\n"
             "layout(location = 0) in vec2 a_pos;\n"
@@ -43,10 +43,10 @@ bool init(void) {
             "}\n",
     });
 
-    pip = axg_pipeline_create(&(axg_pipeline_desc){
+    pip = gfx_pipeline_create(&(gfx_pipeline_desc){
         .layout.attributes = {
-            [0] = { .type = AXG_VERTEX_TYPE_FLOAT, .count = 2 },
-            [1] = { .type = AXG_VERTEX_TYPE_FLOAT, .count = 4 },
+            [0] = { .type = GFX_VERTEX_TYPE_FLOAT, .count = 2 },
+            [1] = { .type = GFX_VERTEX_TYPE_FLOAT, .count = 4 },
         },
         .program = prg,
     });
@@ -55,24 +55,24 @@ bool init(void) {
 }
 
 void tick(double dt) {
-    axg_pass_begin(cbo, &(axg_pass_desc){0});
-        axg_buffer_bind(cbo, vbo);
-        axg_pipeline_bind(cbo, pip);
-        axg_draw(cbo, 3, 0, 0);
-    axg_pass_end(cbo);
-    axg_submit(cbo);
-    axg_present();
+    gfx_pass_begin(cbo, &(gfx_pass_desc){0});
+        gfx_buffer_bind(cbo, vbo);
+        gfx_pipeline_bind(cbo, pip);
+        gfx_draw(cbo, 3, 0, 0);
+    gfx_pass_end(cbo);
+    gfx_submit(cbo);
+    gfx_present();
 }
 
 void quit(void) {
-    axg_buffer_delete(vbo);
-    axg_buffer_delete(cbo);
-    axg_program_delete(prg);
-    axg_pipeline_delete(pip);
+    gfx_buffer_delete(vbo);
+    gfx_buffer_delete(cbo);
+    gfx_program_delete(prg);
+    gfx_pipeline_delete(pip);
 }
 
-axa_desc axa_main(int argc, char **argv) {
-    return (axa_desc){
+app_desc app_main(int argc, char **argv) {
+    return (app_desc){
         .on_init = init,
         .on_tick = tick,
         .on_quit = quit

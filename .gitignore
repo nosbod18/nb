@@ -1,6 +1,6 @@
 # Directories
 .vscode/
-examples/bin/
+bin/
 
 # Files
 .DS_Store
