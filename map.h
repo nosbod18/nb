@@ -58,8 +58,7 @@
             }\
         }\
         (m)[_j__].value = v;\
-    }
-
+    }\
 } while (0)
 
 #define  map__def(m)    ((m)[-1])
