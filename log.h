@@ -16,11 +16,11 @@ enum {
     LOG_LEVEL_FATAL,
 };
 
-#define log_stdout(COLOR, LEVEL, ...) do {\
+#define log_stdout(color, level, ...) do {\
     time_t _raw__ = time(NULL);\
     char _now__[16];\
     _now__[strftime(_now__, sizeof _now__, "%T", localtime(&_raw__))] = 0;\
-    printf("%s%s [%7s] (%s:%d) - ", COLOR, _now__, LEVEL, __FILE__, __LINE__);\
+    printf("%s%s [%7s] (%s:%d) - ", color, _now__, level, __FILE__, __LINE__);\
     printf(__VA_ARGS__);\
     printf("\x1b[0m\n");\
 } while (0)
