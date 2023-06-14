@@ -1,12 +1,8 @@
-/*
-        ██╗███╗   ██╗████████╗███████╗██████╗ ███████╗ █████╗  ██████╗███████╗
-        ██║████╗  ██║╚══██╔══╝██╔════╝██╔══██╗██╔════╝██╔══██╗██╔════╝██╔════╝
-        ██║██╔██╗ ██║   ██║   █████╗  ██████╔╝█████╗  ███████║██║     █████╗  
-        ██║██║╚██╗██║   ██║   ██╔══╝  ██╔══██╗██╔══╝  ██╔══██║██║     ██╔══╝  
-        ██║██║ ╚████║   ██║   ███████╗██║  ██║██║     ██║  ██║╚██████╗███████╗
-        ╚═╝╚═╝  ╚═══╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝ ╚═════╝╚══════╝
- */
-
+//////////////////////////////////////////////////////////////////////////////
+///                                                                        ///
+///                               Interface                                ///
+///                                                                        ///
+//////////////////////////////////////////////////////////////////////////////
 
 #ifndef NB_NB_H
 #define NB_NB_H
@@ -14,7 +10,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
-
 
 //////////////////////////////////////////////////////////////////////////////
 /// Constants
@@ -50,14 +45,6 @@ typedef enum {
 typedef struct {
     float x, y;
 } nb_vec2;
-
-typedef struct {
-    float x, y, z;
-} nb_vec3;
-
-typedef struct {
-    float x, y, z, w;
-} nb_vec4;
 
 typedef union {
     struct { uint8_t r, g, b, a; };
@@ -104,14 +91,16 @@ typedef struct {
 //////////////////////////////////////////////////////////////////////////////
 /// Functions
 
-bool            nb_context_init     (nb_context *ctx);
-bool            nb_context_update   (nb_context *ctx);
+nb_error        nb_context_init     (nb_context *ctx);
+void            nb_context_update   (nb_context *ctx);
 void            nb_context_free     (nb_context *ctx);
 
 nb_input_state  nb_key_state        (nb_context const *ctx, nb_key key);
 nb_input_state  nb_button_state     (nb_context const *ctx, nb_button button);
+nb_vec2         nb_mouse_pos        (nb_context const *ctx);
+nb_vec2         nb_mouse_delta      (nb_context const *ctx);
 
-bool            nb_image_init       (nb_image *img);
+nb_error        nb_image_init       (nb_image *img);
 void            nb_image_free       (nb_image *img);
 
 void            nb_screen_fill      (nb_context *ctx, nb_color color);
@@ -121,8 +110,8 @@ void            nb_rect_draw        (nb_context *ctx, nb_rect rect, nb_color col
 void            nb_rect_fill        (nb_context *ctx, nb_rect rect, nb_color color);
 void            nb_circle_draw      (nb_context *ctx, nb_circle circle, nb_color color);
 void            nb_circle_fill      (nb_context *ctx, nb_circle circle, nb_color color);
-void            nb_image_draw       (nb_context *ctx, nb_image *img, nb_point pos);
-void            nb_image_draw_ex    (nb_context *ctx, nb_image *img, nb_rect dst, nb_rect src, nb_color tint, float rotation);
+void            nb_image_draw       (nb_context *ctx, nb_image const *img, nb_point pos);
+void            nb_image_draw_ex    (nb_context *ctx, nb_image const *img, nb_rect dst, nb_rect src, nb_color tint, float rotation);
 
 nb_vec2         nb_vec2_add         (nb_vec2 a, nb_vec2 b);
 nb_vec2         nb_vec2_sub         (nb_vec2 a, nb_vec2 b);
@@ -135,60 +124,49 @@ float           nb_vec2_mag2        (nb_vec2 a);
 float           nb_vec2_mag         (nb_vec2 a);
 nb_vec2         nb_vec2_norm        (nb_vec2 a);
 
-nb_vec3         nb_vec3_add         (nb_vec3 a, nb_vec3 b);
-nb_vec3         nb_vec3_sub         (nb_vec3 a, nb_vec3 b);
-nb_vec3         nb_vec3_mul         (nb_vec3 a, nb_vec3 b);
-nb_vec3         nb_vec3_adds        (nb_vec3 a, float b);
-nb_vec3         nb_vec3_subs        (nb_vec3 a, float b);
-nb_vec3         nb_vec3_muls        (nb_vec3 a, float b);
-float           nb_vec3_dot         (nb_vec3 a, nb_vec3 b);
-float           nb_vec3_mag2        (nb_vec3 a);
-float           nb_vec3_mag         (nb_vec3 a);
-nb_vec3         nb_vec3_norm        (nb_vec3 a);
-nb_vec3         nb_vec3_cross       (nb_vec3 a, nb_vec3 b);
-
-nb_vec4         nb_vec4_add         (nb_vec4 a, nb_vec4 b);
-nb_vec4         nb_vec4_sub         (nb_vec4 a, nb_vec4 b);
-nb_vec4         nb_vec4_mul         (nb_vec4 a, nb_vec4 b);
-nb_vec4         nb_vec4_adds        (nb_vec4 a, float b);
-nb_vec4         nb_vec4_subs        (nb_vec4 a, float b);
-nb_vec4         nb_vec4_muls        (nb_vec4 a, float b);
-float           nb_vec4_dot         (nb_vec4 a, nb_vec4 b);
-float           nb_vec4_mag2        (nb_vec4 a);
-float           nb_vec4_mag         (nb_vec4 a);
-nb_vec4         nb_vec4_norm        (nb_vec4 a);
-
 
 #endif // NB_NB_H
 
-/*
-        ██╗███╗   ███╗██████╗ ██╗     ███████╗███╗   ███╗███████╗███╗   ██╗████████╗ █████╗ ████████╗██╗ ██████╗ ███╗   ██╗
-        ██║████╗ ████║██╔══██╗██║     ██╔════╝████╗ ████║██╔════╝████╗  ██║╚══██╔══╝██╔══██╗╚══██╔══╝██║██╔═══██╗████╗  ██║
-        ██║██╔████╔██║██████╔╝██║     █████╗  ██╔████╔██║█████╗  ██╔██╗ ██║   ██║   ███████║   ██║   ██║██║   ██║██╔██╗ ██║
-        ██║██║╚██╔╝██║██╔═══╝ ██║     ██╔══╝  ██║╚██╔╝██║██╔══╝  ██║╚██╗██║   ██║   ██╔══██║   ██║   ██║██║   ██║██║╚██╗██║
-        ██║██║ ╚═╝ ██║██║     ███████╗███████╗██║ ╚═╝ ██║███████╗██║ ╚████║   ██║   ██║  ██║   ██║   ██║╚██████╔╝██║ ╚████║
-        ╚═╝╚═╝     ╚═╝╚═╝     ╚══════╝╚══════╝╚═╝     ╚═╝╚══════╝╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝
-*/
 
+//////////////////////////////////////////////////////////////////////////////
+///                                                                        ///
+///                             Implementation                             ///
+///                                                                        ///
+//////////////////////////////////////////////////////////////////////////////
 
 #ifdef NB_IMPL
 #ifndef NB_NB_C
 #define NB_NB_C
 
-
-bool nb_context_init(nb_context *ctx) {
+nb_error nb_context_init(nb_context *ctx) {
     return 0;
 }
 
-bool nb_context_update(nb_context *ctx) {
-    return 0;
+void nb_context_update(nb_context *ctx) {
+    return;
 }
 
 void nb_context_free(nb_context *ctx) {
     return;
 }
 
-bool nb_image_init(nb_image *img) {
+nb_input_state nb_key_state(nb_context const *ctx, nb_key key) {
+    return 0;
+}
+
+nb_input_state nb_button_state(nb_context const *ctx, nb_button button) {
+    return 0;
+}
+
+nb_vec2 nb_mouse_pos(nb_context const *ctx) {
+    return (nb_vec2){0};
+}
+
+nb_vec2 nb_mouse_delta(nb_context const *ctx) {
+    return (nb_vec2){0};
+}
+
+nb_error nb_image_init(nb_image *img) {
     return 0;
 }
 
@@ -224,11 +202,11 @@ void nb_circle_fill(nb_context *ctx, nb_circle circle, nb_color color) {
     return;
 }
 
-void nb_image_draw(nb_context *ctx, nb_image *img, nb_point pos) {
+void nb_image_draw(nb_context *ctx, nb_image const *img, nb_point pos) {
     return;
 }
 
-void nb_image_draw_ex(nb_context *ctx, nb_image *img, nb_rect dst, nb_rect src, nb_color tint, float rotation) {
+void nb_image_draw_ex(nb_context *ctx, nb_image const *img, nb_rect dst, nb_rect src, nb_color tint, float rotation) {
     return;
 }
 
@@ -271,91 +249,6 @@ float nb_vec2_mag(nb_vec2 a) {
 nb_vec2 nb_vec2_norm(nb_vec2 a) {
     return (nb_vec2){0};
 }
-
-nb_vec3 nb_vec3_add(nb_vec3 a, nb_vec3 b) {
-    return (nb_vec3){0};
-}
-
-nb_vec3 nb_vec3_sub(nb_vec3 a, nb_vec3 b) {
-    return (nb_vec3){0};
-}
-
-nb_vec3 nb_vec3_mul(nb_vec3 a, nb_vec3 b) {
-    return (nb_vec3){0};
-}
-
-nb_vec3 nb_vec3_adds(nb_vec3 a, float b) {
-    return (nb_vec3){0};
-}
-
-nb_vec3 nb_vec3_subs(nb_vec3 a, float b) {
-    return (nb_vec3){0};
-}
-
-nb_vec3 nb_vec3_muls(nb_vec3 a, float b) {
-    return (nb_vec3){0};
-}
-
-float nb_vec3_dot(nb_vec3 a, nb_vec3 b) {
-    return 0;
-}
-
-float nb_vec3_mag2(nb_vec3 a) {
-    return 0;
-}
-
-float nb_vec3_mag(nb_vec3 a) {
-    return 0;
-}
-
-nb_vec3 nb_vec3_norm(nb_vec3 a) {
-    return (nb_vec3){0};
-}
-
-nb_vec3 nb_vec3_cross(nb_vec3 a, nb_vec3 b) {
-    return (nb_vec3){0};
-}
-
-nb_vec4 nb_vec4_add(nb_vec4 a, nb_vec4 b) {
-    return (nb_vec4){0};
-}
-
-nb_vec4 nb_vec4_sub(nb_vec4 a, nb_vec4 b) {
-    return (nb_vec4){0};
-}
-
-nb_vec4 nb_vec4_mul(nb_vec4 a, nb_vec4 b) {
-    return (nb_vec4){0};
-}
-
-nb_vec4 nb_vec4_adds(nb_vec4 a, float b) {
-    return (nb_vec4){0};
-}
-
-nb_vec4 nb_vec4_subs(nb_vec4 a, float b) {
-    return (nb_vec4){0};
-}
-
-nb_vec4 nb_vec4_muls(nb_vec4 a, float b) {
-    return (nb_vec4){0};
-}
-
-float nb_vec4_dot(nb_vec4 a, nb_vec4 b) {
-    return (nb_vec4){0};
-}
-
-float nb_vec4_mag2(nb_vec4 a) {
-    return (nb_vec4){0};
-}
-
-float nb_vec4_mag(nb_vec4 a) {
-    return (nb_vec4){0};
-}
-
-nb_vec4 nb_vec4_norm(nb_vec4 a) {
-    return (nb_vec4){0};
-}
-
 
 #endif // NB_NB_C
 #endif // NB_IMPL
